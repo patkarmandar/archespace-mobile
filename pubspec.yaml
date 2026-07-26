@@ -1,0 +1,16 @@
+name: archespace_mobile
+description: Arche Space mobile app (Flutter). Currently the crypto-contract spike.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+# Pure-Dart for now so the crypto spike runs with `dart test` before any Flutter
+# UI is added. `cryptography` provides Argon2id + AES-GCM (pure Dart, no native).
+dependencies:
+  cryptography: ^2.7.0
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^4.0.0
