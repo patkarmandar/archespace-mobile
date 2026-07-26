@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:archespace_mobile/core/crypto/arche_crypto.dart';
 
 /// The go/no-go gate for the mobile port: prove the Dart crypto reproduces and

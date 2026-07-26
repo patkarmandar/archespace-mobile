@@ -1,1 +1,6 @@
-include: package:lints/recommended.yaml
+# Flutter's recommended lints. See https://dart.dev/tools/analysis for options.
+include: package:flutter_lints/flutter.yaml
+
+# linter:
+#   rules:
+#     avoid_print: false
