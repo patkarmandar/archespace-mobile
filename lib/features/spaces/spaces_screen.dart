@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/data/space_repository.dart';
 import '../../core/vault/vault_session.dart';
+import 'space_detail_screen.dart';
 
 class SpacesScreen extends StatefulWidget {
   const SpacesScreen({super.key});
@@ -75,6 +76,12 @@ class _SpacesScreenState extends State<SpacesScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => SpaceDetailScreen(space: space),
+                  ),
+                ),
               );
             },
           );
