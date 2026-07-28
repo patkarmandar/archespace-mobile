@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/auth/auth_service.dart';
+import 'core/vault/secure_key_store.dart';
 import 'core/vault/vault_session.dart';
 import 'features/auth/login_screen.dart';
 import 'features/spaces/spaces_screen.dart';
@@ -44,6 +45,8 @@ class _RootGateState extends State<_RootGate> {
     _sub = _auth.onAuthStateChange.listen((state) {
       if (state.event == AuthChangeEvent.signedOut) {
         VaultSession.instance.lock();
+        // Don't leave a stored key behind for the next account on this device.
+        SecureKeyStore().clear();
       }
       if (mounted) setState(() {});
     });

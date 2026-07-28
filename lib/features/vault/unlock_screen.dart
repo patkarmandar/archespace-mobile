@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/auth/auth_service.dart';
+import '../../core/vault/biometric_service.dart';
+import '../../core/vault/secure_key_store.dart';
 import '../../core/vault/vault_service.dart';
 import '../../core/vault/vault_session.dart';
 
@@ -14,10 +16,20 @@ class UnlockScreen extends StatefulWidget {
 class _UnlockScreenState extends State<UnlockScreen> {
   final AuthService _auth = AuthService();
   final VaultService _vault = VaultService();
+  final SecureKeyStore _store = SecureKeyStore();
+  final BiometricService _biometric = BiometricService();
   final TextEditingController _pin = TextEditingController();
 
   bool _loading = false;
   String? _error;
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initBiometric();
+  }
 
   @override
   void dispose() {
@@ -25,7 +37,40 @@ class _UnlockScreenState extends State<UnlockScreen> {
     super.dispose();
   }
 
-  Future<void> _unlock() async {
+  Future<void> _initBiometric() async {
+    final available = await _biometric.isAvailable();
+    final enabled = available && await _store.hasKey();
+    if (!mounted) return;
+    setState(() {
+      _biometricAvailable = available;
+      _biometricEnabled = enabled;
+    });
+    if (enabled) {
+      _unlockWithBiometrics();
+    }
+  }
+
+  Future<void> _unlockWithBiometrics() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final ok = await _biometric.authenticate('Unlock your Arche vault');
+      if (!ok) return;
+      final masterKey = await _store.readMasterKey();
+      if (masterKey == null) {
+        // Stored key vanished (e.g. cleared) — fall back to PIN.
+        setState(() => _biometricEnabled = false);
+        return;
+      }
+      VaultSession.instance.unlock(masterKey);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _unlockWithPin() async {
     final userId = _auth.currentUser?.id;
     if (userId == null) return;
 
@@ -35,8 +80,17 @@ class _UnlockScreenState extends State<UnlockScreen> {
     });
     try {
       final masterKey = await _vault.unlock(userId, _pin.text.trim());
+
+      // Offer to enable biometric unlock for next time, before we navigate away.
+      if (_biometricAvailable && !_biometricEnabled && mounted) {
+        if (await _askEnableBiometric()) {
+          if (await _biometric.authenticate('Confirm to enable biometric unlock')) {
+            await _store.saveMasterKey(masterKey);
+          }
+        }
+      }
+
       VaultSession.instance.unlock(masterKey);
-      // The root gate is listening to VaultSession.unlocked -> spaces screen.
     } on VaultException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
@@ -44,6 +98,35 @@ class _UnlockScreenState extends State<UnlockScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<bool> _askEnableBiometric() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Enable biometric unlock?'),
+        content: const Text(
+          'Use your fingerprint or face to unlock the vault next time, '
+          'instead of typing your PIN.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Enable'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  Future<void> _forgetBiometric() async {
+    await _store.clear();
+    if (mounted) setState(() => _biometricEnabled = false);
   }
 
   @override
@@ -77,12 +160,20 @@ class _UnlockScreenState extends State<UnlockScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 20),
+                  if (_biometricEnabled) ...[
+                    OutlinedButton.icon(
+                      onPressed: _loading ? null : _unlockWithBiometrics,
+                      icon: const Icon(Icons.fingerprint),
+                      label: const Text('Unlock with biometrics'),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   TextField(
                     controller: _pin,
                     obscureText: true,
                     keyboardType: TextInputType.number,
                     enabled: !_loading,
-                    onSubmitted: (_) => _unlock(),
+                    onSubmitted: (_) => _unlockWithPin(),
                     decoration: const InputDecoration(
                       labelText: 'PIN or passphrase',
                       border: OutlineInputBorder(),
@@ -97,7 +188,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
                   ],
                   const SizedBox(height: 20),
                   FilledButton(
-                    onPressed: _loading ? null : _unlock,
+                    onPressed: _loading ? null : _unlockWithPin,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: _loading
@@ -109,6 +200,11 @@ class _UnlockScreenState extends State<UnlockScreen> {
                           : const Text('Unlock'),
                     ),
                   ),
+                  if (_biometricEnabled)
+                    TextButton(
+                      onPressed: _loading ? null : _forgetBiometric,
+                      child: const Text('Forget biometric unlock'),
+                    ),
                 ],
               ),
             ),
