@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   # arc1 crypto port: Argon2id + AES-GCM (pure Dart).
   cryptography: ^2.7.0
+  # Same backend as the web app (Auth, Postgres, RLS, Realtime).
+  supabase_flutter: ^2.8.0
 
 dev_dependencies:
   flutter_test:
