@@ -1,21 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../crypto/arche_crypto.dart';
-
-/// A decrypted space (only the fields this slice displays).
-class Space {
-  Space({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.pinned,
-  });
-
-  final String id;
-  final String name;
-  final String description;
-  final bool pinned;
-}
+import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
+import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 
 /// Reads spaces from Supabase and decrypts them with the master key. Encrypted
 /// columns (`name`, `description`) are `arc1` values; everything else is plain

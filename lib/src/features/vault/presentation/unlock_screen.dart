@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../core/auth/auth_service.dart';
-import '../../core/vault/biometric_service.dart';
-import '../../core/vault/secure_key_store.dart';
-import '../../core/vault/vault_service.dart';
-import '../../core/vault/vault_session.dart';
+import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/vault/data/biometric_service.dart';
+import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
+import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
+import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key});

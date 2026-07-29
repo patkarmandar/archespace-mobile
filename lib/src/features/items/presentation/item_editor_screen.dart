@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '../../core/data/item_repository.dart';
-import '../../core/data/item_types.dart';
-import '../../core/data/space_item.dart';
-import '../../core/vault/vault_session.dart';
+import 'package:archespace_mobile/src/features/items/data/item_repository.dart';
+import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
+import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
+import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 
 /// Full-screen editor for one item. Pass [existing] to edit, or [type] (with no
 /// [existing]) to create. The per-type body editor mutates [_content] in place;

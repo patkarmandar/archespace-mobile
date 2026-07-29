@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../core/auth/auth_service.dart';
-import '../../core/data/space_repository.dart';
-import '../../core/vault/vault_session.dart';
-import 'space_detail_screen.dart';
+import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart';
+import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
+import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/features/spaces/presentation/space_detail_screen.dart';
 
 class SpacesScreen extends StatefulWidget {
   const SpacesScreen({super.key});

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../crypto/arche_crypto.dart';
-import 'space_item.dart';
+import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
+import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
 /// Reads and decrypts the items in a space. The `title` column is an `arc1`
 /// string and `content` is `arc1(JSON.stringify(obj))`; everything else is

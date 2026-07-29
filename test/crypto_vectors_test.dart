@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:archespace_mobile/core/crypto/arche_crypto.dart';
+import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 
 /// The go/no-go gate for the mobile port: prove the Dart crypto reproduces and
 /// consumes the exact bytes the web produces. Vectors are vendored from the web

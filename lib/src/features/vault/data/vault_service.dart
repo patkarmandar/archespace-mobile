@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../crypto/arche_crypto.dart';
+import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 
 class VaultException implements Exception {
   VaultException(this.message);

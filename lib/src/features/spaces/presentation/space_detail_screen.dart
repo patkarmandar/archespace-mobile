@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/data/item_repository.dart';
-import '../../core/data/item_types.dart';
-import '../../core/data/space_item.dart';
-import '../../core/data/space_repository.dart';
-import '../../core/vault/vault_session.dart';
-import '../items/item_card.dart';
-import '../items/item_editor_screen.dart';
+import 'package:archespace_mobile/src/features/items/data/item_repository.dart';
+import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
+import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
+import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
+import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/features/items/presentation/item_card.dart';
+import 'package:archespace_mobile/src/features/items/presentation/item_editor_screen.dart';
 
 class SpaceDetailScreen extends StatefulWidget {
   const SpaceDetailScreen({super.key, required this.space});

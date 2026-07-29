@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/data/space_item.dart';
+import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
 /// Renders one space item as a card: title plus a type-specific body.
 /// Read-only for this slice (editing comes later).

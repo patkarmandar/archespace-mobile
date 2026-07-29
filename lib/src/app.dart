@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'core/auth/auth_service.dart';
-import 'core/vault/secure_key_store.dart';
-import 'core/vault/vault_session.dart';
-import 'features/auth/login_screen.dart';
-import 'features/spaces/spaces_screen.dart';
-import 'features/vault/unlock_screen.dart';
+import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
+import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/features/auth/presentation/login_screen.dart';
+import 'package:archespace_mobile/src/features/spaces/presentation/spaces_screen.dart';
+import 'package:archespace_mobile/src/features/vault/presentation/unlock_screen.dart';
 
 class ArcheApp extends StatelessWidget {
   const ArcheApp({super.key});
