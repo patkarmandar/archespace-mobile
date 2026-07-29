@@ -867,12 +867,14 @@ class _DrawEditorState extends State<_DrawEditor> {
           ],
         ),
         const SizedBox(height: 12),
-        AspectRatio(
-          aspectRatio: 1000 / 600,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              _canvas = Size(constraints.maxWidth, constraints.maxHeight);
-              return DecoratedBox(
+        Expanded(
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: 1000 / 600,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  _canvas = Size(constraints.maxWidth, constraints.maxHeight);
+                  return DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   border: Border.all(color: Theme.of(context).dividerColor),
@@ -892,7 +894,9 @@ class _DrawEditorState extends State<_DrawEditor> {
                   ),
                 ),
               );
-            },
+                },
+              ),
+            ),
           ),
         ),
       ],
@@ -1047,7 +1051,8 @@ class _SecretEditorState extends State<_SecretEditor> {
         ),
       );
     }
-    return Column(
+    return SingleChildScrollView(
+      child: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1090,6 +1095,7 @@ class _SecretEditorState extends State<_SecretEditor> {
               : const Text('Reveal'),
         ),
       ],
+      ),
     );
   }
 }
