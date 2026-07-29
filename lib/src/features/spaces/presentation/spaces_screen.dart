@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/settings/presentation/settings_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/space_detail_screen.dart';
@@ -18,7 +18,6 @@ class SpacesScreen extends StatefulWidget {
 }
 
 class _SpacesScreenState extends State<SpacesScreen> {
-  final AuthService _auth = AuthService();
   List<Space>? _spaces;
   Object? _error;
   bool _offline = false;
@@ -114,9 +113,11 @@ class _SpacesScreenState extends State<SpacesScreen> {
             tooltip: 'Lock vault',
           ),
           IconButton(
-            onPressed: _auth.signOut,
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+            ),
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
           ),
         ],
       ),
