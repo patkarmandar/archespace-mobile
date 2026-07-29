@@ -39,12 +39,14 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'List',
     description: 'Simple bullet list',
     icon: Icons.list,
+    editable: true,
   ),
   ItemTypeDef(
     type: 'numbered_list',
     label: 'Numbered list',
     description: 'Ordered list',
     icon: Icons.format_list_numbered,
+    editable: true,
   ),
   ItemTypeDef(
     type: 'checkbox_list',
