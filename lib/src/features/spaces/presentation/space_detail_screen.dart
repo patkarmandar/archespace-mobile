@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:archespace_mobile/src/features/items/data/item_repository.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
-import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
-import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/items/presentation/item_card.dart';
 import 'package:archespace_mobile/src/features/items/presentation/item_editor_screen.dart';
+import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
+import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
+import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
 
 class SpaceDetailScreen extends StatefulWidget {
   const SpaceDetailScreen({super.key, required this.space});
@@ -19,7 +20,8 @@ class SpaceDetailScreen extends StatefulWidget {
 }
 
 class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
-  late Future<List<SpaceItem>> _future;
+  List<SpaceItem>? _items;
+  Object? _error;
   TableWatcher? _watcher;
 
   @override
@@ -31,9 +33,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
       table: 'space_items',
       filterColumn: 'space_id',
       filterValue: widget.space.id,
-      onChange: () {
-        if (mounted) _reload();
-      },
+      onChange: _load,
     );
   }
 
@@ -43,12 +43,18 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     super.dispose();
   }
 
-  void _load() {
-    _future =
-        ItemRepository(VaultSession.instance.masterKey).listItems(widget.space.id);
+  Future<void> _load() async {
+    try {
+      final items = await ItemRepository(VaultSession.instance.masterKey)
+          .listItems(widget.space.id);
+      if (mounted) setState(() {
+        _items = items;
+        _error = null;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = e);
+    }
   }
-
-  void _reload() => setState(_load);
 
   Future<void> _editItem(SpaceItem item) async {
     final saved = await Navigator.of(context).push<bool>(
@@ -60,17 +66,16 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
         ),
       ),
     );
-    if (saved == true && mounted) _reload();
+    if (saved == true && mounted) _load();
   }
 
   Future<void> _addItem(String type) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            ItemEditorScreen(spaceId: widget.space.id, type: type),
+        builder: (_) => ItemEditorScreen(spaceId: widget.space.id, type: type),
       ),
     );
-    if (saved == true && mounted) _reload();
+    if (saved == true && mounted) _load();
   }
 
   void _openAddSheet() {
@@ -107,39 +112,31 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
         tooltip: 'Add item',
         child: const Icon(Icons.add),
       ),
-      body: FutureBuilder<List<SpaceItem>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text('Failed to load items:\n${snapshot.error}',
-                    textAlign: TextAlign.center),
-              ),
-            );
-          }
-          final items = snapshot.data ?? const [];
-          if (items.isEmpty) {
-            return const Center(child: Text('No items in this space.'));
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 88),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return ItemCard(
-                item: item,
-                onTap:
-                    isEditableType(item.type) ? () => _editItem(item) : null,
-              );
-            },
-          );
-        },
-      ),
+      body: _items == null && _error == null
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(onRefresh: _load, child: _body()),
+    );
+  }
+
+  Widget _body() {
+    if (_items == null && _error != null) {
+      return ScrollableMessage('Failed to load items:\n$_error');
+    }
+    final items = _items ?? const <SpaceItem>[];
+    if (items.isEmpty) {
+      return const ScrollableMessage('No items in this space.');
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 8, bottom: 88),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return ItemCard(
+          item: item,
+          onTap: isEditableType(item.type) ? () => _editItem(item) : null,
+        );
+      },
     );
   }
 }
