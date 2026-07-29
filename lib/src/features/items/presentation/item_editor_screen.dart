@@ -125,11 +125,11 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
       case 'markdown':
         return _NoteEditor(content: _content);
       case 'menu_list':
+        return _ListEditor(content: _content, variant: _ListVariant.bullet);
       case 'numbered_list':
-        return _ListEditor(
-          content: _content,
-          ordered: widget.type == 'numbered_list',
-        );
+        return _ListEditor(content: _content, variant: _ListVariant.numbered);
+      case 'checkbox_list':
+        return _ListEditor(content: _content, variant: _ListVariant.checklist);
       default:
         return Center(
           child: Text('Editing ${widget.type} is not available yet.'),
@@ -175,14 +175,16 @@ class _NoteEditorState extends State<_NoteEditor> {
   }
 }
 
-/// Editable rows for `menu_list` / `numbered_list` (`{ items: [{id, text}] }`).
-/// Add, edit, remove, and drag to reorder. [ordered] only changes the leading
-/// marker (number vs bullet).
+enum _ListVariant { bullet, numbered, checklist }
+
+/// Editable rows for `menu_list` / `numbered_list` / `checkbox_list`
+/// (`{ items: [{id, text, checked?}] }`). Add, edit, remove, and drag to
+/// reorder. [variant] controls the leading marker (bullet / number / checkbox).
 class _ListEditor extends StatefulWidget {
-  const _ListEditor({required this.content, required this.ordered});
+  const _ListEditor({required this.content, required this.variant});
 
   final Map<String, dynamic> content;
-  final bool ordered;
+  final _ListVariant variant;
 
   @override
   State<_ListEditor> createState() => _ListEditorState();
@@ -221,7 +223,32 @@ class _ListEditorState extends State<_ListEditor> {
   }
 
   void _add() {
-    setState(() => _items.add({'id': _uid(), 'text': ''}));
+    setState(() => _items.add({
+          'id': _uid(),
+          'text': '',
+          if (widget.variant == _ListVariant.checklist) 'checked': false,
+        }));
+  }
+
+  Widget _leading(int index, Map<String, dynamic> item) {
+    switch (widget.variant) {
+      case _ListVariant.numbered:
+        return SizedBox(
+          width: 28,
+          child: Text('${index + 1}.', textAlign: TextAlign.center),
+        );
+      case _ListVariant.bullet:
+        return const SizedBox(
+          width: 28,
+          child: Text('•', textAlign: TextAlign.center),
+        );
+      case _ListVariant.checklist:
+        return Checkbox(
+          value: (item['checked'] ?? false) == true,
+          onChanged: (value) =>
+              setState(() => item['checked'] = value ?? false),
+        );
+    }
   }
 
   void _remove(int index) {
@@ -253,19 +280,18 @@ class _ListEditorState extends State<_ListEditor> {
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
                   children: [
-                    SizedBox(
-                      width: 28,
-                      child: Text(
-                        widget.ordered ? '${index + 1}.' : '•',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+                    _leading(index, item),
                     Expanded(
                       child: TextField(
                         controller: _controllerFor(item),
                         onChanged: (value) => item['text'] = value,
                         minLines: 1,
                         maxLines: null,
+                        style: widget.variant == _ListVariant.checklist &&
+                                (item['checked'] ?? false) == true
+                            ? const TextStyle(
+                                decoration: TextDecoration.lineThrough)
+                            : null,
                         decoration: const InputDecoration(
                           hintText: 'Item…',
                           border: InputBorder.none,

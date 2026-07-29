@@ -53,6 +53,7 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'Checklist',
     description: 'Items with checkboxes',
     icon: Icons.checklist,
+    editable: true,
   ),
   ItemTypeDef(
     type: 'card_list',
