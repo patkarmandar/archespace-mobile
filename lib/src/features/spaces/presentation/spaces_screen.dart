@@ -127,13 +127,16 @@ class _SpacesScreenState extends State<SpacesScreen> {
       ),
       body: _spaces == null && _error == null
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                if (_offline) const OfflineBanner(),
-                Expanded(
-                  child: RefreshIndicator(onRefresh: _load, child: _body()),
-                ),
-              ],
+          : SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  if (_offline) const OfflineBanner(),
+                  Expanded(
+                    child: RefreshIndicator(onRefresh: _load, child: _body()),
+                  ),
+                ],
+              ),
             ),
     );
   }
@@ -148,6 +151,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 88),
       itemCount: spaces.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {

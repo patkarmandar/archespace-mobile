@@ -84,9 +84,12 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   void _openAddSheet() {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: 8),
           children: [
             for (final def in kItemTypes.where((d) => d.editable))
               ListTile(
@@ -117,13 +120,16 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
       ),
       body: _items == null && _error == null
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                if (_offline) const OfflineBanner(),
-                Expanded(
-                  child: RefreshIndicator(onRefresh: _load, child: _body()),
-                ),
-              ],
+          : SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  if (_offline) const OfflineBanner(),
+                  Expanded(
+                    child: RefreshIndicator(onRefresh: _load, child: _body()),
+                  ),
+                ],
+              ),
             ),
     );
   }

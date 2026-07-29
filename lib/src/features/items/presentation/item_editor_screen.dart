@@ -106,22 +106,25 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                 ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _title,
-              style: Theme.of(context).textTheme.titleLarge,
-              decoration: const InputDecoration(
-                hintText: 'Title',
-                border: InputBorder.none,
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _title,
+                style: Theme.of(context).textTheme.titleLarge,
+                decoration: const InputDecoration(
+                  hintText: 'Title',
+                  border: InputBorder.none,
+                ),
               ),
-            ),
-            const Divider(),
-            Expanded(child: _buildBody()),
-          ],
+              const Divider(),
+              Expanded(child: _buildBody()),
+            ],
+          ),
         ),
       ),
     );
