@@ -49,4 +49,45 @@ class ItemRepository {
     }
     return <String, dynamic>{};
   }
+
+  Future<String> _encTitle(String title) =>
+      ArcheCrypto.encryptArc1(title, _masterKey);
+
+  Future<String> _encContent(Map<String, dynamic> content) =>
+      ArcheCrypto.encryptArc1(jsonEncode(content), _masterKey);
+
+  /// Re-encrypt and save an existing item's title + content.
+  Future<void> updateItem({
+    required String id,
+    required String title,
+    required Map<String, dynamic> content,
+  }) async {
+    await _client.from('space_items').update({
+      'title': await _encTitle(title),
+      'content': await _encContent(content),
+    }).eq('id', id);
+  }
+
+  /// Create a new item at the end of the space (position = current count).
+  Future<void> createItem({
+    required String spaceId,
+    required String type,
+    String title = '',
+    required Map<String, dynamic> content,
+  }) async {
+    final existing = await _client
+        .from('space_items')
+        .select('id')
+        .eq('space_id', spaceId)
+        .isFilter('deleted_at', null)
+        .isFilter('archived_at', null);
+
+    await _client.from('space_items').insert({
+      'space_id': spaceId,
+      'type': type,
+      'title': await _encTitle(title),
+      'content': await _encContent(content),
+      'position': existing.length,
+    });
+  }
 }

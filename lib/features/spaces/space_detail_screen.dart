@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../core/data/item_repository.dart';
+import '../../core/data/item_types.dart';
 import '../../core/data/space_item.dart';
 import '../../core/data/space_repository.dart';
 import '../../core/vault/vault_session.dart';
 import '../items/item_card.dart';
+import '../items/item_editor_screen.dart';
 
 class SpaceDetailScreen extends StatefulWidget {
   const SpaceDetailScreen({super.key, required this.space});
@@ -21,8 +23,60 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _future = ItemRepository(VaultSession.instance.masterKey)
-        .listItems(widget.space.id);
+    _load();
+  }
+
+  void _load() {
+    _future =
+        ItemRepository(VaultSession.instance.masterKey).listItems(widget.space.id);
+  }
+
+  void _reload() => setState(_load);
+
+  Future<void> _editItem(SpaceItem item) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ItemEditorScreen(
+          spaceId: widget.space.id,
+          type: item.type,
+          existing: item,
+        ),
+      ),
+    );
+    if (saved == true && mounted) _reload();
+  }
+
+  Future<void> _addItem(String type) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) =>
+            ItemEditorScreen(spaceId: widget.space.id, type: type),
+      ),
+    );
+    if (saved == true && mounted) _reload();
+  }
+
+  void _openAddSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final def in kItemTypes.where((d) => d.editable))
+              ListTile(
+                leading: Icon(def.icon),
+                title: Text(def.label),
+                subtitle: Text(def.description),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _addItem(def.type);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -30,6 +84,11 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.space.name.isEmpty ? 'Untitled' : widget.space.name),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddSheet,
+        tooltip: 'Add item',
+        child: const Icon(Icons.add),
       ),
       body: FutureBuilder<List<SpaceItem>>(
         future: _future,
@@ -51,9 +110,16 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
             return const Center(child: Text('No items in this space.'));
           }
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.only(top: 8, bottom: 88),
             itemCount: items.length,
-            itemBuilder: (context, index) => ItemCard(item: items[index]),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return ItemCard(
+                item: item,
+                onTap:
+                    isEditableType(item.type) ? () => _editItem(item) : null,
+              );
+            },
           );
         },
       ),

@@ -5,19 +5,23 @@ import '../../core/data/space_item.dart';
 /// Renders one space item as a card: title plus a type-specific body.
 /// Read-only for this slice (editing comes later).
 class ItemCard extends StatelessWidget {
-  const ItemCard({super.key, required this.item});
+  const ItemCard({super.key, required this.item, this.onTap});
 
   final SpaceItem item;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               children: [
                 if (item.pinned)
@@ -35,7 +39,8 @@ class ItemCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _ItemBody(item: item),
-          ],
+            ],
+          ),
         ),
       ),
     );
