@@ -132,6 +132,8 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         return _ListEditor(content: _content, variant: _ListVariant.checklist);
       case 'card_list':
         return _CardsEditor(content: _content);
+      case 'table':
+        return _TableEditor(content: _content);
       default:
         return Center(
           child: Text('Editing ${widget.type} is not available yet.'),
@@ -483,6 +485,225 @@ class _CardsEditorState extends State<_CardsEditor> {
             onPressed: _add,
             icon: const Icon(Icons.add),
             label: const Text('Add card'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+const double _kCellWidth = 150;
+
+/// Grid editor for `table` (`{ columns: [labels], rows: [[cells]] }`). Edit the
+/// header + cells, add/remove columns and rows. The grid is kept rectangular
+/// (every row has one cell per column). Scrolls both axes.
+class _TableEditor extends StatefulWidget {
+  const _TableEditor({required this.content});
+
+  final Map<String, dynamic> content;
+
+  @override
+  State<_TableEditor> createState() => _TableEditorState();
+}
+
+class _TableEditorState extends State<_TableEditor> {
+  late final List<String> _columns;
+  late final List<List<String>> _rows;
+  late final List<TextEditingController> _colCtrls;
+  late final List<List<TextEditingController>> _cellCtrls;
+
+  @override
+  void initState() {
+    super.initState();
+    _columns = (((widget.content['columns'] as List?) ?? const []))
+        .map((e) => (e ?? '').toString())
+        .toList();
+    if (_columns.isEmpty) {
+      _columns.addAll(['', '']);
+    }
+    _rows = (((widget.content['rows'] as List?) ?? const []))
+        .map((r) => (((r as List?) ?? const []))
+            .map((e) => (e ?? '').toString())
+            .toList())
+        .toList();
+    // Keep every row the width of the header.
+    for (final row in _rows) {
+      while (row.length < _columns.length) {
+        row.add('');
+      }
+      if (row.length > _columns.length) {
+        row.removeRange(_columns.length, row.length);
+      }
+    }
+    if (_rows.isEmpty) {
+      _rows.add(List<String>.filled(_columns.length, '', growable: true));
+    }
+
+    _colCtrls = [for (final c in _columns) TextEditingController(text: c)];
+    _cellCtrls = [
+      for (final row in _rows)
+        [for (final cell in row) TextEditingController(text: cell)],
+    ];
+
+    // Share the same list instances so edits flow into the saved content.
+    widget.content['columns'] = _columns;
+    widget.content['rows'] = _rows;
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _colCtrls) {
+      controller.dispose();
+    }
+    for (final row in _cellCtrls) {
+      for (final controller in row) {
+        controller.dispose();
+      }
+    }
+    super.dispose();
+  }
+
+  void _addColumn() {
+    setState(() {
+      _columns.add('');
+      _colCtrls.add(TextEditingController());
+      for (var r = 0; r < _rows.length; r++) {
+        _rows[r].add('');
+        _cellCtrls[r].add(TextEditingController());
+      }
+    });
+  }
+
+  void _removeColumn(int c) {
+    if (_columns.length <= 1) return;
+    setState(() {
+      _columns.removeAt(c);
+      _colCtrls.removeAt(c).dispose();
+      for (var r = 0; r < _rows.length; r++) {
+        _rows[r].removeAt(c);
+        _cellCtrls[r].removeAt(c).dispose();
+      }
+    });
+  }
+
+  void _addRow() {
+    setState(() {
+      _rows.add(List<String>.filled(_columns.length, '', growable: true));
+      _cellCtrls.add([
+        for (var c = 0; c < _columns.length; c++) TextEditingController(),
+      ]);
+    });
+  }
+
+  void _removeRow(int r) {
+    if (_rows.length <= 1) return;
+    setState(() {
+      _rows.removeAt(r);
+      for (final controller in _cellCtrls.removeAt(r)) {
+        controller.dispose();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final border = Border.all(color: Theme.of(context).dividerColor);
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row + add-column button.
+                  Row(
+                    children: [
+                      for (var c = 0; c < _columns.length; c++)
+                        Container(
+                          width: _kCellWidth,
+                          decoration: BoxDecoration(
+                            border: border,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                          ),
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _colCtrls[c],
+                                  onChanged: (v) => _columns[c] = v,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
+                                  decoration: InputDecoration(
+                                    hintText: 'Column ${c + 1}',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                              if (_columns.length > 1)
+                                InkWell(
+                                  onTap: () => _removeColumn(c),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(Icons.close, size: 14),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      IconButton(
+                        onPressed: _addColumn,
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Add column',
+                      ),
+                    ],
+                  ),
+                  // Data rows + remove-row button.
+                  for (var r = 0; r < _rows.length; r++)
+                    Row(
+                      children: [
+                        for (var c = 0; c < _columns.length; c++)
+                          Container(
+                            width: _kCellWidth,
+                            decoration: BoxDecoration(border: border),
+                            child: TextField(
+                              controller: _cellCtrls[r][c],
+                              onChanged: (v) => _rows[r][c] = v,
+                              minLines: 1,
+                              maxLines: null,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 10),
+                              ),
+                            ),
+                          ),
+                        IconButton(
+                          onPressed:
+                              _rows.length > 1 ? () => _removeRow(r) : null,
+                          icon: const Icon(Icons.close, size: 16),
+                          tooltip: 'Remove row',
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _addRow,
+            icon: const Icon(Icons.add),
+            label: const Text('Add row'),
           ),
         ),
       ],

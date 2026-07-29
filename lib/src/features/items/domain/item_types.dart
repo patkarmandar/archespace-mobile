@@ -67,6 +67,7 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'Table',
     description: 'Rows and columns of text',
     icon: Icons.table_chart_outlined,
+    editable: true,
   ),
   ItemTypeDef(
     type: 'secret',
