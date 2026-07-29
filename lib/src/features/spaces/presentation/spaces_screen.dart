@@ -5,6 +5,7 @@ import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/space_detail_screen.dart';
+import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
 
 class SpacesScreen extends StatefulWidget {
   const SpacesScreen({super.key});
@@ -16,12 +17,32 @@ class SpacesScreen extends StatefulWidget {
 class _SpacesScreenState extends State<SpacesScreen> {
   final AuthService _auth = AuthService();
   late Future<List<Space>> _future;
+  TableWatcher? _watcher;
 
   @override
   void initState() {
     super.initState();
+    _load();
+    _watcher = TableWatcher(
+      channelName: 'spaces-realtime',
+      table: 'spaces',
+      onChange: () {
+        if (mounted) _reload();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _watcher?.dispose();
+    super.dispose();
+  }
+
+  void _load() {
     _future = SpaceRepository(VaultSession.instance.masterKey).listSpaces();
   }
+
+  void _reload() => setState(_load);
 
   @override
   Widget build(BuildContext context) {

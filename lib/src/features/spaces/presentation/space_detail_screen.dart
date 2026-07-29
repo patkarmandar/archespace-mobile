@@ -7,6 +7,7 @@ import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/items/presentation/item_card.dart';
 import 'package:archespace_mobile/src/features/items/presentation/item_editor_screen.dart';
+import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
 
 class SpaceDetailScreen extends StatefulWidget {
   const SpaceDetailScreen({super.key, required this.space});
@@ -19,11 +20,27 @@ class SpaceDetailScreen extends StatefulWidget {
 
 class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   late Future<List<SpaceItem>> _future;
+  TableWatcher? _watcher;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _watcher = TableWatcher(
+      channelName: 'items-${widget.space.id}',
+      table: 'space_items',
+      filterColumn: 'space_id',
+      filterValue: widget.space.id,
+      onChange: () {
+        if (mounted) _reload();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _watcher?.dispose();
+    super.dispose();
   }
 
   void _load() {
