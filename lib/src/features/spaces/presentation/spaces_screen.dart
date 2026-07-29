@@ -7,6 +7,7 @@ import 'package:archespace_mobile/src/features/spaces/presentation/space_detail_
 import 'package:archespace_mobile/src/features/spaces/presentation/space_editor_screen.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
+import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
 import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
 
 class SpacesScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
   final AuthService _auth = AuthService();
   List<Space>? _spaces;
   Object? _error;
+  bool _offline = false;
   TableWatcher? _watcher;
 
   @override
@@ -41,10 +43,11 @@ class _SpacesScreenState extends State<SpacesScreen> {
 
   Future<void> _load() async {
     try {
-      final spaces =
+      final result =
           await SpaceRepository(VaultSession.instance.masterKey).listSpaces();
       if (mounted) setState(() {
-        _spaces = spaces;
+        _spaces = result.spaces;
+        _offline = result.fromCache;
         _error = null;
       });
     } catch (e) {
@@ -124,7 +127,14 @@ class _SpacesScreenState extends State<SpacesScreen> {
       ),
       body: _spaces == null && _error == null
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(onRefresh: _load, child: _body()),
+          : Column(
+              children: [
+                if (_offline) const OfflineBanner(),
+                Expanded(
+                  child: RefreshIndicator(onRefresh: _load, child: _body()),
+                ),
+              ],
+            ),
     );
   }
 

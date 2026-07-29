@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
+import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
+import 'package:archespace_mobile/src/shared/data/cache_store.dart';
 
 /// Reads and decrypts the items in a space. The `title` column is an `arc1`
 /// string and `content` is `arc1(JSON.stringify(obj))`; everything else is
@@ -15,25 +16,43 @@ class ItemRepository {
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  Future<List<SpaceItem>> listItems(String spaceId) async {
-    final rows = await _client
-        .from('space_items')
-        .select('id, type, title, content, pinned, position, created_at')
-        .eq('space_id', spaceId)
-        .isFilter('deleted_at', null)
-        .isFilter('archived_at', null)
-        .order('pinned', ascending: false)
-        .order('position', ascending: true);
+  /// Fetch a space's items, caching the encrypted rows; on a network error,
+  /// fall back to the cache. `fromCache` is true when the fallback was used.
+  Future<({List<SpaceItem> items, bool fromCache})> listItems(
+      String spaceId) async {
+    final cacheKey = 'items_$spaceId';
+    List<dynamic> rows;
+    try {
+      rows = await _client
+          .from('space_items')
+          .select('id, type, title, content, pinned, position, created_at')
+          .eq('space_id', spaceId)
+          .isFilter('deleted_at', null)
+          .isFilter('archived_at', null)
+          .order('pinned', ascending: false)
+          .order('position', ascending: true);
+      await CacheStore.write(cacheKey, rows);
+    } catch (_) {
+      final cached = await CacheStore.read(cacheKey);
+      if (cached is List) {
+        return (items: await _decode(cached), fromCache: true);
+      }
+      rethrow;
+    }
+    return (items: await _decode(rows), fromCache: false);
+  }
 
+  Future<List<SpaceItem>> _decode(List<dynamic> rows) async {
     final items = <SpaceItem>[];
     for (final row in rows) {
+      final m = row as Map;
       items.add(SpaceItem(
-        id: row['id'] as String,
-        type: (row['type'] ?? '') as String,
+        id: m['id'] as String,
+        type: (m['type'] ?? '') as String,
         title: await ArcheCrypto.decryptArc1(
-            (row['title'] ?? '') as String, _masterKey),
-        content: await _decryptContent(row['content']),
-        pinned: (row['pinned'] ?? false) as bool,
+            (m['title'] ?? '') as String, _masterKey),
+        content: await _decryptContent(m['content']),
+        pinned: (m['pinned'] ?? false) as bool,
       ));
     }
     return items;

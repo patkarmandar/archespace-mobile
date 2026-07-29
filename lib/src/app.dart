@@ -9,6 +9,7 @@ import 'package:archespace_mobile/src/features/vault/application/vault_session.d
 import 'package:archespace_mobile/src/features/auth/presentation/login_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/spaces_screen.dart';
 import 'package:archespace_mobile/src/features/vault/presentation/unlock_screen.dart';
+import 'package:archespace_mobile/src/shared/data/cache_store.dart';
 
 class ArcheApp extends StatelessWidget {
   const ArcheApp({super.key});
@@ -45,8 +46,9 @@ class _RootGateState extends State<_RootGate> {
     _sub = _auth.onAuthStateChange.listen((state) {
       if (state.event == AuthChangeEvent.signedOut) {
         VaultSession.instance.lock();
-        // Don't leave a stored key behind for the next account on this device.
+        // Don't leave a stored key or cached data behind for the next account.
         SecureKeyStore().clear();
+        CacheStore.clear();
       }
       if (mounted) setState(() {});
     });

@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
+import 'package:archespace_mobile/src/shared/data/cache_store.dart';
 
 /// Reads spaces from Supabase and decrypts them with the master key. Encrypted
 /// columns (`name`, `description`) are `arc1` values; everything else is plain
@@ -13,25 +14,42 @@ class SpaceRepository {
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  Future<List<Space>> listSpaces() async {
-    final rows = await _client
-        .from('spaces')
-        .select('id, name, description, pinned, position, created_at')
-        .isFilter('deleted_at', null)
-        .isFilter('archived_at', null)
-        .order('pinned', ascending: false)
-        .order('position', ascending: true)
-        .order('created_at', ascending: false);
+  /// Fetch spaces, caching the encrypted rows; on a network error, fall back
+  /// to the cache. `fromCache` is true when the offline fallback was used.
+  Future<({List<Space> spaces, bool fromCache})> listSpaces() async {
+    const cacheKey = 'spaces';
+    List<dynamic> rows;
+    try {
+      rows = await _client
+          .from('spaces')
+          .select('id, name, description, pinned, position, created_at')
+          .isFilter('deleted_at', null)
+          .isFilter('archived_at', null)
+          .order('pinned', ascending: false)
+          .order('position', ascending: true)
+          .order('created_at', ascending: false);
+      await CacheStore.write(cacheKey, rows);
+    } catch (_) {
+      final cached = await CacheStore.read(cacheKey);
+      if (cached is List) {
+        return (spaces: await _decode(cached), fromCache: true);
+      }
+      rethrow;
+    }
+    return (spaces: await _decode(rows), fromCache: false);
+  }
 
+  Future<List<Space>> _decode(List<dynamic> rows) async {
     final spaces = <Space>[];
     for (final row in rows) {
+      final m = row as Map;
       spaces.add(Space(
-        id: row['id'] as String,
+        id: m['id'] as String,
         name: await ArcheCrypto.decryptArc1(
-            (row['name'] ?? '') as String, _masterKey),
+            (m['name'] ?? '') as String, _masterKey),
         description: await ArcheCrypto.decryptArc1(
-            (row['description'] ?? '') as String, _masterKey),
-        pinned: (row['pinned'] ?? false) as bool,
+            (m['description'] ?? '') as String, _masterKey),
+        pinned: (m['pinned'] ?? false) as bool,
       ));
     }
     return spaces;
