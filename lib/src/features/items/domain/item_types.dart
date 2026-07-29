@@ -60,6 +60,7 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'Cards',
     description: 'Title and description pairs',
     icon: Icons.view_agenda_outlined,
+    editable: true,
   ),
   ItemTypeDef(
     type: 'table',
