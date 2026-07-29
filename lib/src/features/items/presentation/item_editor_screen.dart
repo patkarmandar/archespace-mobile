@@ -2,10 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/items/data/item_repository.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
+import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 
 /// Full-screen editor for one item. Pass [existing] to edit, or [type] (with no
 /// [existing]) to create. The per-type body editor mutates [_content] in place;
@@ -34,6 +37,10 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
 
   bool _saving = false;
 
+  // Some editors (Secret) must run async work (encryption) to fold their state
+  // into `_content` just before saving. They register that step here.
+  Future<void> Function()? _finalizeContent;
+
   Map<String, dynamic> _initialContent() {
     final source = widget.existing?.content ?? defaultContentFor(widget.type);
     // Deep copy so editing never mutates the item still shown in the list.
@@ -50,6 +57,7 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     setState(() => _saving = true);
     final repo = ItemRepository(VaultSession.instance.masterKey);
     try {
+      if (_finalizeContent != null) await _finalizeContent!();
       if (widget.existing != null) {
         await repo.updateItem(
           id: widget.existing!.id,
@@ -136,6 +144,11 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         return _TableEditor(content: _content);
       case 'draw':
         return _DrawEditor(content: _content);
+      case 'secret':
+        return _SecretEditor(
+          content: _content,
+          onRegisterFinalize: (fn) => _finalizeContent = fn,
+        );
       default:
         return Center(
           child: Text('Editing ${widget.type} is not available yet.'),
@@ -936,4 +949,144 @@ Color _parseInk(Object? hex, Color fallback) {
     if (value != null) return Color(0xFF000000 | value);
   }
   return fallback;
+}
+
+/// Editor for `secret` (`{ secret: true, cipher: <arc1> }`). The secret text is
+/// a nested cipher; revealing/editing it requires re-verifying the vault PIN.
+/// A new/empty secret is editable directly; an existing one starts locked.
+/// On save, the plaintext is re-encrypted with the master key into `cipher`.
+class _SecretEditor extends StatefulWidget {
+  const _SecretEditor({
+    required this.content,
+    required this.onRegisterFinalize,
+  });
+
+  final Map<String, dynamic> content;
+  final void Function(Future<void> Function()) onRegisterFinalize;
+
+  @override
+  State<_SecretEditor> createState() => _SecretEditorState();
+}
+
+class _SecretEditorState extends State<_SecretEditor> {
+  final AuthService _auth = AuthService();
+  final VaultService _vault = VaultService();
+  final TextEditingController _text = TextEditingController();
+  final TextEditingController _pin = TextEditingController();
+
+  bool _revealed = false;
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final cipher = (widget.content['cipher'] ?? '').toString();
+    // A new / empty secret is editable straight away; existing ciphers stay
+    // locked until the PIN is re-verified.
+    _revealed = cipher.isEmpty;
+    widget.onRegisterFinalize(_finalize);
+  }
+
+  @override
+  void dispose() {
+    _text.dispose();
+    _pin.dispose();
+    super.dispose();
+  }
+
+  // Fold the plaintext back into the (nested) cipher before saving. If never
+  // revealed, the existing cipher is left untouched (only the title changed).
+  Future<void> _finalize() async {
+    if (!_revealed) return;
+    widget.content['secret'] = true;
+    widget.content['cipher'] =
+        await ArcheCrypto.encryptArc1(_text.text, VaultSession.instance.masterKey);
+  }
+
+  Future<void> _reveal() async {
+    final userId = _auth.currentUser?.id;
+    if (userId == null) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      // Re-verify the vault PIN (throws on a wrong PIN).
+      await _vault.unlock(userId, _pin.text.trim());
+      final cipher = (widget.content['cipher'] ?? '').toString();
+      _text.text = cipher.isEmpty
+          ? ''
+          : await ArcheCrypto.decryptArc1(
+              cipher, VaultSession.instance.masterKey);
+      setState(() => _revealed = true);
+    } on VaultException catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = 'Could not verify your PIN.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_revealed) {
+      return TextField(
+        controller: _text,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        keyboardType: TextInputType.multiline,
+        decoration: const InputDecoration(
+          hintText: 'Secret text…',
+          border: InputBorder.none,
+        ),
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 8),
+        const Icon(Icons.lock_outline, size: 40),
+        const SizedBox(height: 12),
+        const Text(
+          'This secret is hidden. Enter your vault PIN to reveal and edit it.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _pin,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          enabled: !_busy,
+          onSubmitted: (_) => _reveal(),
+          decoration: const InputDecoration(
+            labelText: 'Vault PIN',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: _busy ? null : _reveal,
+          child: _busy
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Reveal'),
+        ),
+      ],
+    );
+  }
 }

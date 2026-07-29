@@ -213,7 +213,7 @@ class _Masked extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            '•••••• hidden secret (reveal it in the web app)',
+            '•••••• hidden secret (tap to reveal)',
             style: TextStyle(color: Theme.of(context).hintColor),
           ),
         ),

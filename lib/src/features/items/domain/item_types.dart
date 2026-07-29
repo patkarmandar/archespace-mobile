@@ -74,6 +74,7 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'Secret',
     description: 'PIN-protected hidden text',
     icon: Icons.lock_outline,
+    editable: true,
   ),
   ItemTypeDef(
     type: 'draw',
