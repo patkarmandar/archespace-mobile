@@ -36,4 +36,50 @@ class SpaceRepository {
     }
     return spaces;
   }
+
+  Future<String> _enc(String value) =>
+      ArcheCrypto.encryptArc1(value, _masterKey);
+
+  /// Create a new space at the end of the list (position = current count).
+  Future<void> createSpace({
+    required String name,
+    String description = '',
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw StateError('Not authenticated');
+
+    final existing = await _client
+        .from('spaces')
+        .select('id')
+        .isFilter('deleted_at', null)
+        .isFilter('archived_at', null);
+
+    await _client.from('spaces').insert({
+      'user_id': userId,
+      'name': await _enc(name),
+      'description': await _enc(description),
+      'position': existing.length,
+    });
+  }
+
+  /// Update only the name + description; other columns (tags, color, pinned)
+  /// are left untouched.
+  Future<void> updateSpace({
+    required String id,
+    required String name,
+    String description = '',
+  }) async {
+    await _client.from('spaces').update({
+      'name': await _enc(name),
+      'description': await _enc(description),
+    }).eq('id', id);
+  }
+
+  /// Soft-delete to the recycle bin (sets deleted_at), matching the web.
+  Future<void> deleteSpace(String id) async {
+    await _client
+        .from('spaces')
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
+  }
 }

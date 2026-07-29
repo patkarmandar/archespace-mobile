@@ -4,6 +4,7 @@ import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/space_detail_screen.dart';
+import 'package:archespace_mobile/src/features/spaces/presentation/space_editor_screen.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
 import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
@@ -51,6 +52,53 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
   }
 
+  Future<void> _createSpace() async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const SpaceEditorScreen()),
+    );
+    if (saved == true && mounted) _load();
+  }
+
+  Future<void> _editSpace(Space space) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => SpaceEditorScreen(existing: space)),
+    );
+    if (saved == true && mounted) _load();
+  }
+
+  Future<void> _deleteSpace(Space space) async {
+    final name = space.name.isEmpty ? 'Untitled' : space.name;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Move space to bin?'),
+        content: Text('"$name" and its items will be moved to the recycle bin.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Move to bin'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await SpaceRepository(VaultSession.instance.masterKey)
+          .deleteSpace(space.id);
+      if (mounted) _load();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not delete the space.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,6 +116,11 @@ class _SpacesScreenState extends State<SpacesScreen> {
             tooltip: 'Sign out',
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _createSpace,
+        tooltip: 'New space',
+        child: const Icon(Icons.add),
       ),
       body: _spaces == null && _error == null
           ? const Center(child: CircularProgressIndicator())
@@ -101,7 +154,16 @@ class _SpacesScreenState extends State<SpacesScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit') _editSpace(space);
+              if (value == 'delete') _deleteSpace(space);
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'edit', child: Text('Edit')),
+              PopupMenuItem(value: 'delete', child: Text('Delete')),
+            ],
+          ),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => SpaceDetailScreen(space: space),
