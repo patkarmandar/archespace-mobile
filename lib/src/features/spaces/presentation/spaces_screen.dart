@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:archespace_mobile/src/features/search/presentation/search_screen.dart';
 import 'package:archespace_mobile/src/features/settings/presentation/settings_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
@@ -107,6 +108,13 @@ class _SpacesScreenState extends State<SpacesScreen> {
       appBar: AppBar(
         title: const Text('Spaces'),
         actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
+            ),
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+          ),
           IconButton(
             onPressed: VaultSession.instance.lock,
             icon: const Icon(Icons.lock_outline),
