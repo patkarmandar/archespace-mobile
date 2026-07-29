@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
 
@@ -58,6 +59,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('Signed in as'),
               subtitle: Text(email ?? 'Unknown'),
             ),
+            const _SectionHeader('Appearance'),
+            const _AppearanceSection(),
             const _SectionHeader('Security'),
             ListTile(
               leading: const Icon(Icons.lock_outline),
@@ -83,6 +86,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AppearanceSection extends StatelessWidget {
+  const _AppearanceSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final appearance = AppearanceController.instance;
+    return ListenableBuilder(
+      listenable: appearance,
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<ThemeMode>(
+                segments: const [
+                  ButtonSegment(value: ThemeMode.system, label: Text('System')),
+                  ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                  ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+                ],
+                selected: {appearance.themeMode},
+                showSelectedIcon: false,
+                onSelectionChanged: (selection) =>
+                    appearance.setThemeMode(selection.first),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                for (final option in kAccentOptions)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: GestureDetector(
+                      onTap: () => appearance.setAccent(option.id),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: option.color,
+                          border: Border.all(
+                            color: appearance.accentId == option.id
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                        child: appearance.accentId == option.id
+                            ? const Icon(Icons.check,
+                                color: Colors.white, size: 20)
+                            : null,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

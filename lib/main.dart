@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/app.dart';
+import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
 import 'package:archespace_mobile/src/shared/config/app_config.dart';
 
 Future<void> main() async {
@@ -18,6 +19,7 @@ Future<void> main() async {
     // one the web app uses (SUPABASE_ANON_KEY).
     publishableKey: AppConfig.supabaseAnonKey,
   );
+  await AppearanceController.instance.load();
 
   runApp(const ArcheApp());
 }

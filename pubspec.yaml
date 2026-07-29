@@ -21,6 +21,8 @@ dependencies:
   flutter_markdown: ^0.7.4
   # Local filesystem path for the offline (ciphertext) cache.
   path_provider: ^2.1.4
+  # Persisted appearance preferences (theme mode + accent).
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:

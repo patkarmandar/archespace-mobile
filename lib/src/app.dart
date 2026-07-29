@@ -8,6 +8,7 @@ import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart'
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/auth/presentation/login_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/spaces_screen.dart';
+import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
 import 'package:archespace_mobile/src/features/vault/presentation/unlock_screen.dart';
 import 'package:archespace_mobile/src/shared/data/cache_store.dart';
 
@@ -16,13 +17,24 @@ class ArcheApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Arche Space',
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF7C6AF7),
-        useMaterial3: true,
+    final appearance = AppearanceController.instance;
+    return ListenableBuilder(
+      listenable: appearance,
+      builder: (context, _) => MaterialApp(
+        title: 'Arche Space',
+        themeMode: appearance.themeMode,
+        theme: ThemeData(
+          colorSchemeSeed: appearance.accent,
+          brightness: Brightness.light,
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          colorSchemeSeed: appearance.accent,
+          brightness: Brightness.dark,
+          useMaterial3: true,
+        ),
+        home: const _RootGate(),
       ),
-      home: const _RootGate(),
     );
   }
 }
