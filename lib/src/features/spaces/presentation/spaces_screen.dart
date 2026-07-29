@@ -6,6 +6,7 @@ import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/space_detail_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/space_editor_screen.dart';
+import 'package:archespace_mobile/src/features/spaces/presentation/widgets/space_card.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
 import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
@@ -158,40 +159,21 @@ class _SpacesScreenState extends State<SpacesScreen> {
     if (spaces.isEmpty) {
       return const ScrollableMessage('No spaces yet.');
     }
-    return ListView.separated(
+    return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 88),
+      padding: const EdgeInsets.only(top: 4, bottom: 88),
       itemCount: spaces.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final space = spaces[index];
-        return ListTile(
-          leading: Icon(
-            space.pinned ? Icons.push_pin : Icons.folder_outlined,
-          ),
-          title: Text(space.name.isEmpty ? 'Untitled' : space.name),
-          subtitle: space.description.isEmpty
-              ? null
-              : Text(
-                  space.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-          trailing: PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') _editSpace(space);
-              if (value == 'delete') _deleteSpace(space);
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
-            ],
-          ),
+        return SpaceCard(
+          space: space,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => SpaceDetailScreen(space: space),
             ),
           ),
+          onEdit: () => _editSpace(space),
+          onDelete: () => _deleteSpace(space),
         );
       },
     );
