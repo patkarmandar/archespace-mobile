@@ -134,6 +134,8 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         return _CardsEditor(content: _content);
       case 'table':
         return _TableEditor(content: _content);
+      case 'draw':
+        return _DrawEditor(content: _content);
       default:
         return Center(
           child: Text('Editing ${widget.type} is not available yet.'),
@@ -709,4 +711,229 @@ class _TableEditorState extends State<_TableEditor> {
       ],
     );
   }
+}
+
+const List<String> _kInkColors = [
+  '#1e293b',
+  '#e11d48',
+  '#2563eb',
+  '#059669',
+  '#d97706',
+  '#7c3aed',
+];
+const List<double> _kInkSizes = [4, 8, 16];
+
+/// Freehand canvas for `draw`
+/// (`{ strokes: [{ points: [[x, y, pressure], …], color, size }] }`).
+/// Points are captured in a fixed 1000x600 logical space so drawings scale and
+/// match the read renderer / web. Includes colour + size pickers, undo, clear.
+class _DrawEditor extends StatefulWidget {
+  const _DrawEditor({required this.content});
+
+  final Map<String, dynamic> content;
+
+  @override
+  State<_DrawEditor> createState() => _DrawEditorState();
+}
+
+class _DrawEditorState extends State<_DrawEditor> {
+  late final List<dynamic> _strokes;
+  Map<String, dynamic>? _current;
+  String _color = _kInkColors.first;
+  double _size = _kInkSizes[1];
+  Size _canvas = Size.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _strokes = List<dynamic>.from((widget.content['strokes'] as List?) ?? const []);
+    widget.content['strokes'] = _strokes;
+  }
+
+  List<double> _toLogical(Offset local, double pressure) {
+    final w = _canvas.width <= 0 ? 1.0 : _canvas.width;
+    final h = _canvas.height <= 0 ? 1.0 : _canvas.height;
+    return [local.dx / w * 1000, local.dy / h * 600, pressure];
+  }
+
+  void _start(Offset p, double pressure) {
+    setState(() => _current = {
+          'points': [_toLogical(p, pressure)],
+          'color': _color,
+          'size': _size,
+        });
+  }
+
+  void _extend(Offset p, double pressure) {
+    if (_current == null) return;
+    setState(() => (_current!['points'] as List).add(_toLogical(p, pressure)));
+  }
+
+  void _end() {
+    final current = _current;
+    if (current != null && (current['points'] as List).isNotEmpty) {
+      _strokes.add(current);
+    }
+    setState(() => _current = null);
+  }
+
+  void _undo() {
+    if (_strokes.isEmpty) return;
+    setState(_strokes.removeLast);
+  }
+
+  void _clear() {
+    setState(_strokes.clear);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final col in _kInkColors)
+              GestureDetector(
+                onTap: () => setState(() => _color = col),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _parseInk(col, Colors.black),
+                    border: Border.all(
+                      color: _color == col ? accent : Colors.transparent,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(width: 8),
+            for (final s in _kInkSizes)
+              GestureDetector(
+                onTap: () => setState(() => _size = s),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _size == s ? accent : Theme.of(context).dividerColor,
+                    ),
+                  ),
+                  child: Container(
+                    width: s,
+                    height: s,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            const Spacer(),
+            IconButton(
+              onPressed: _strokes.isEmpty ? null : _undo,
+              icon: const Icon(Icons.undo),
+              tooltip: 'Undo',
+            ),
+            IconButton(
+              onPressed: _strokes.isEmpty ? null : _clear,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Clear',
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        AspectRatio(
+          aspectRatio: 1000 / 600,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              _canvas = Size(constraints.maxWidth, constraints.maxHeight);
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: (e) => _start(e.localPosition, e.pressure),
+                    onPointerMove: (e) => _extend(e.localPosition, e.pressure),
+                    onPointerUp: (e) => _end(),
+                    child: CustomPaint(
+                      painter: _DrawPainter(_strokes, _current),
+                      size: Size.infinite,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DrawPainter extends CustomPainter {
+  _DrawPainter(this.strokes, this.current);
+
+  final List<dynamic> strokes;
+  final Map<String, dynamic>? current;
+
+  void _paintStroke(Canvas canvas, Size size, Map<dynamic, dynamic> stroke) {
+    final points = (stroke['points'] as List?) ?? const [];
+    if (points.isEmpty) return;
+    final paint = Paint()
+      ..color = _parseInk(stroke['color'], const Color(0xFF1E293B))
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth =
+          ((stroke['size'] as num?)?.toDouble() ?? 8) * size.width / 1000;
+
+    final path = Path();
+    var started = false;
+    for (final p in points) {
+      if (p is! List || p.length < 2) continue;
+      final x = (p[0] as num).toDouble() / 1000 * size.width;
+      final y = (p[1] as num).toDouble() / 600 * size.height;
+      if (!started) {
+        path.moveTo(x, y);
+        started = true;
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final s in strokes) {
+      if (s is Map) _paintStroke(canvas, size, s);
+    }
+    final current = this.current;
+    if (current != null) _paintStroke(canvas, size, current);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DrawPainter oldDelegate) => true;
+}
+
+Color _parseInk(Object? hex, Color fallback) {
+  if (hex is String && hex.startsWith('#') && hex.length == 7) {
+    final value = int.tryParse(hex.substring(1), radix: 16);
+    if (value != null) return Color(0xFF000000 | value);
+  }
+  return fallback;
 }

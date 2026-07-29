@@ -80,6 +80,7 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'Drawing',
     description: 'Freehand sketch',
     icon: Icons.brush_outlined,
+    editable: true,
   ),
 ];
 
