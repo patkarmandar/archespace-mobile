@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
@@ -57,9 +58,13 @@ class _ItemBody extends StatelessWidget {
     final c = item.content;
     switch (item.type) {
       case 'textbox':
+        final plain = (c['text'] ?? '').toString();
+        return plain.isEmpty ? const _Empty() : SelectableText(plain);
       case 'markdown':
-        final text = (c['text'] ?? '').toString();
-        return text.isEmpty ? const _Empty() : SelectableText(text);
+        final md = (c['text'] ?? '').toString();
+        return md.isEmpty
+            ? const _Empty()
+            : MarkdownBody(data: md, selectable: true);
       case 'menu_list':
         return _ListView(items: _listTexts(c), ordered: false);
       case 'numbered_list':

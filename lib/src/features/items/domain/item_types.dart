@@ -32,6 +32,7 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'Markdown',
     description: 'Rich text with markdown',
     icon: Icons.code,
+    editable: true,
   ),
   ItemTypeDef(
     type: 'menu_list',
