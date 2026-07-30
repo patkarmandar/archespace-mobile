@@ -9,8 +9,10 @@ import 'package:archespace_mobile/src/features/spaces/presentation/space_editor_
 import 'package:archespace_mobile/src/features/spaces/presentation/widgets/space_card.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
+import 'package:archespace_mobile/src/shared/sort/sort.dart';
 import 'package:archespace_mobile/src/shared/widgets/bulk_action_bar.dart';
 import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
 
 class SpacesScreen extends StatefulWidget {
@@ -27,16 +29,27 @@ class _SpacesScreenState extends State<SpacesScreen> {
   TableWatcher? _watcher;
   bool _selectMode = false;
   final Set<String> _selected = {};
+  String _sort = kSortDefault;
 
   @override
   void initState() {
     super.initState();
     _load();
+    SharedPreferences.getInstance().then((prefs) {
+      final saved = prefs.getString('sort_spaces');
+      if (saved != null && mounted) setState(() => _sort = saved);
+    });
     _watcher = TableWatcher(
       channelName: 'spaces-realtime',
       table: 'spaces',
       onChange: _load,
     );
+  }
+
+  void _setSort(String value) {
+    setState(() => _sort = value);
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setString('sort_spaces', value));
   }
 
   @override
@@ -269,6 +282,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
                   icon: const Icon(Icons.search),
                   tooltip: 'Search',
                 ),
+                if (hasSpaces) SortMenu(value: _sort, onChanged: _setSort),
                 if (hasSpaces)
                   IconButton(
                     onPressed: _enterSelect,
@@ -352,14 +366,22 @@ class _SpacesScreenState extends State<SpacesScreen> {
     if (_spaces == null && _error != null) {
       return ScrollableMessage('Failed to load spaces:\n$_error');
     }
-    final spaces = _spaces ?? const <Space>[];
-    if (spaces.isEmpty) {
+    final all = _spaces ?? const <Space>[];
+    if (all.isEmpty) {
       return const ScrollableMessage('No spaces yet.');
     }
+    final spaces = applySort(
+      all,
+      _sort,
+      name: (s) => s.name,
+      createdAt: (s) => s.createdAt,
+      pinned: (s) => s.pinned,
+    );
     return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 4, bottom: 88),
-      buildDefaultDragHandles: !_selectMode && !_offline,
+      buildDefaultDragHandles:
+          !_selectMode && !_offline && _sort == kSortDefault,
       onReorder: _onReorder,
       itemCount: spaces.length,
       itemBuilder: (context, index) {

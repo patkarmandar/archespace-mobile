@@ -53,6 +53,7 @@ class ItemRepository {
             (m['title'] ?? '') as String, _masterKey),
         content: await _decryptContent(m['content']),
         pinned: (m['pinned'] ?? false) as bool,
+        createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
       ));
     }
     return items;

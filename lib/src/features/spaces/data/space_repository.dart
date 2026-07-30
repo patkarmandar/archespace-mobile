@@ -75,6 +75,7 @@ class SpaceRepository {
         color: m['color'] as String?,
         itemCount: (m['_item_count'] ?? 0) as int,
         pinnedCount: (m['_pinned_count'] ?? 0) as int,
+        createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
       ));
     }
     return spaces;

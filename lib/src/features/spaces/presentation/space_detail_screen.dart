@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:archespace_mobile/src/features/items/data/item_repository.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
@@ -11,6 +12,7 @@ import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/export/pdf_exporter.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
+import 'package:archespace_mobile/src/shared/sort/sort.dart';
 import 'package:archespace_mobile/src/shared/widgets/bulk_action_bar.dart';
 import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
 import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
@@ -38,11 +40,16 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   bool _focusHandled = false;
   bool _selectMode = false;
   final Set<String> _selected = {};
+  String _sort = kSortDefault;
 
   @override
   void initState() {
     super.initState();
     _load();
+    SharedPreferences.getInstance().then((prefs) {
+      final saved = prefs.getString('sort_items');
+      if (saved != null && mounted) setState(() => _sort = saved);
+    });
     _watcher = TableWatcher(
       channelName: 'items-${widget.space.id}',
       table: 'space_items',
@@ -121,6 +128,12 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           ..clear()
           ..addAll((_items ?? const <SpaceItem>[]).map((i) => i.id));
       });
+
+  void _setSort(String value) {
+    setState(() => _sort = value);
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setString('sort_items', value));
+  }
 
   void _onReorder(int oldIndex, int newIndex) {
     final list = List<SpaceItem>.of(_items ?? const []);
@@ -404,6 +417,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
               title: Text(
                   widget.space.name.isEmpty ? 'Untitled' : widget.space.name),
               actions: [
+                if (hasItems) SortMenu(value: _sort, onChanged: _setSort),
                 if (hasItems)
                   IconButton(
                     onPressed: _exportSpace,
@@ -486,14 +500,22 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     if (_items == null && _error != null) {
       return ScrollableMessage('Failed to load items:\n$_error');
     }
-    final items = _items ?? const <SpaceItem>[];
-    if (items.isEmpty) {
+    final all = _items ?? const <SpaceItem>[];
+    if (all.isEmpty) {
       return const ScrollableMessage('No items in this space.');
     }
+    final items = applySort(
+      all,
+      _sort,
+      name: (i) => i.title,
+      createdAt: (i) => i.createdAt,
+      pinned: (i) => i.pinned,
+    );
     return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 8, bottom: 88),
-      buildDefaultDragHandles: !_selectMode && !_offline,
+      buildDefaultDragHandles:
+          !_selectMode && !_offline && _sort == kSortDefault,
       onReorder: _onReorder,
       itemCount: items.length,
       itemBuilder: (context, index) {

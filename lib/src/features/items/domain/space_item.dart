@@ -7,6 +7,7 @@ class SpaceItem {
     required this.title,
     required this.content,
     required this.pinned,
+    this.createdAt,
   });
 
   final String id;
@@ -14,4 +15,5 @@ class SpaceItem {
   final String title;
   final Map<String, dynamic> content;
   final bool pinned;
+  final DateTime? createdAt;
 }

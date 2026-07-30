@@ -9,6 +9,7 @@ class Space {
     this.color,
     this.itemCount = 0,
     this.pinnedCount = 0,
+    this.createdAt,
   });
 
   final String id;
@@ -24,4 +25,5 @@ class Space {
   /// of those are pinned. Computed at fetch time; 0 when unknown.
   final int itemCount;
   final int pinnedCount;
+  final DateTime? createdAt;
 }
