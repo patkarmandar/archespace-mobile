@@ -16,6 +16,9 @@ class SpaceCard extends StatelessWidget {
     required this.onDuplicate,
     required this.onArchive,
     required this.onDelete,
+    this.selectMode = false,
+    this.selected = false,
+    this.onSelectToggle,
   });
 
   final Space space;
@@ -25,6 +28,9 @@ class SpaceCard extends StatelessWidget {
   final VoidCallback onDuplicate;
   final VoidCallback onArchive;
   final VoidCallback onDelete;
+  final bool selectMode;
+  final bool selected;
+  final VoidCallback? onSelectToggle;
 
   String get _countLabel {
     final items = '${space.itemCount} ${space.itemCount == 1 ? 'item' : 'items'}';
@@ -34,18 +40,20 @@ class SpaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final border = spaceColor(space.color) ??
-        (space.pinned ? scheme.primary : scheme.outlineVariant);
+    final border = selected
+        ? scheme.primary
+        : (spaceColor(space.color) ??
+            (space.pinned ? scheme.primary : scheme.outlineVariant));
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: border, width: 1.5),
+        side: BorderSide(color: border, width: selected ? 2 : 1.5),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: selectMode ? onSelectToggle : onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -80,6 +88,17 @@ class SpaceCard extends StatelessWidget {
                     ),
                   Row(
                     children: [
+                      if (selectMode)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Icon(
+                            selected
+                                ? Icons.check_circle
+                                : Icons.circle_outlined,
+                            size: 20,
+                            color: selected ? scheme.primary : scheme.outline,
+                          ),
+                        ),
                       if (space.pinned)
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
@@ -97,7 +116,9 @@ class SpaceCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+                      if (!selectMode)
+                        Icon(Icons.chevron_right,
+                            color: scheme.onSurfaceVariant),
                     ],
                   ),
                   if (space.description.isNotEmpty)
@@ -128,6 +149,7 @@ class SpaceCard extends StatelessWidget {
                           fontSize: 12, color: scheme.onSurfaceVariant),
                     ),
                   ),
+                  if (!selectMode)
                   Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: scheme.outlineVariant),

@@ -9,6 +9,7 @@ import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
+import 'package:archespace_mobile/src/shared/widgets/bulk_action_bar.dart';
 import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
 import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
 
@@ -33,6 +34,8 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   final GlobalKey _focusKey = GlobalKey();
   String? _flashId;
   bool _focusHandled = false;
+  bool _selectMode = false;
+  final Set<String> _selected = {};
 
   @override
   void initState() {
@@ -97,6 +100,86 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
       ),
     );
     if (saved == true && mounted) _load();
+  }
+
+  // ── Selection mode ──
+  void _enterSelect() => setState(() => _selectMode = true);
+
+  void _exitSelect() => setState(() {
+        _selectMode = false;
+        _selected.clear();
+      });
+
+  void _toggleSelect(String id) => setState(() {
+        if (!_selected.remove(id)) _selected.add(id);
+      });
+
+  void _selectAll() => setState(() {
+        _selected
+          ..clear()
+          ..addAll((_items ?? const <SpaceItem>[]).map((i) => i.id));
+      });
+
+  Future<void> _runBulk(Future<void> Function(ItemRepository) op) async {
+    if (_selected.isEmpty) return;
+    try {
+      await op(ItemRepository(VaultSession.instance.masterKey));
+      if (mounted) {
+        _exitSelect();
+        _load();
+      }
+    } catch (_) {
+      _showError('Bulk action failed.');
+    }
+  }
+
+  Future<void> _bulkDeleteItems() async {
+    final ids = _selected.toList();
+    await _runBulk((r) => r.bulkDelete(ids));
+  }
+
+  Future<void> _bulkMoveItems() async {
+    List<Space> spaces;
+    try {
+      spaces =
+          (await SpaceRepository(VaultSession.instance.masterKey).listSpaces())
+              .spaces;
+    } catch (_) {
+      _showError('Could not load spaces.');
+      return;
+    }
+    final destinations = spaces.where((s) => s.id != widget.space.id).toList();
+    if (!mounted) return;
+    if (destinations.isEmpty) {
+      _showError('No other space to move to.');
+      return;
+    }
+    final target = await showModalBottomSheet<Space>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Text('Move to space',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            for (final s in destinations)
+              ListTile(
+                leading: const Icon(Icons.folder_outlined),
+                title: Text(s.name.isEmpty ? 'Untitled' : s.name),
+                onTap: () => Navigator.pop(sheetContext, s),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (target == null) return;
+    final ids = _selected.toList();
+    await _runBulk((r) => r.bulkMove(ids, target.id));
   }
 
   Future<void> _togglePinItem(SpaceItem item) async {
@@ -255,15 +338,84 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hasItems = (_items ?? const <SpaceItem>[]).isNotEmpty;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.space.name.isEmpty ? 'Untitled' : widget.space.name),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddSheet,
-        tooltip: 'Add item',
-        child: const Icon(Icons.add),
-      ),
+      appBar: _selectMode
+          ? AppBar(
+              leading: IconButton(
+                onPressed: _exitSelect,
+                icon: const Icon(Icons.close),
+                tooltip: 'Cancel',
+              ),
+              title: Text('${_selected.length} selected'),
+              actions: [
+                IconButton(
+                  onPressed: _selectAll,
+                  icon: const Icon(Icons.select_all),
+                  tooltip: 'Select all',
+                ),
+              ],
+            )
+          : AppBar(
+              title: Text(
+                  widget.space.name.isEmpty ? 'Untitled' : widget.space.name),
+              actions: [
+                if (hasItems)
+                  IconButton(
+                    onPressed: _enterSelect,
+                    icon: const Icon(Icons.checklist),
+                    tooltip: 'Select',
+                  ),
+              ],
+            ),
+      floatingActionButton: _selectMode
+          ? null
+          : FloatingActionButton(
+              onPressed: _openAddSheet,
+              tooltip: 'Add item',
+              child: const Icon(Icons.add),
+            ),
+      bottomNavigationBar: _selectMode
+          ? BulkActionBar(
+              count: _selected.length,
+              actions: [
+                BulkAction(
+                  icon: Icons.push_pin,
+                  label: 'Pin',
+                  onPressed: () {
+                    final ids = _selected.toList();
+                    _runBulk((r) => r.bulkSetPinned(ids, true));
+                  },
+                ),
+                BulkAction(
+                  icon: Icons.push_pin_outlined,
+                  label: 'Unpin',
+                  onPressed: () {
+                    final ids = _selected.toList();
+                    _runBulk((r) => r.bulkSetPinned(ids, false));
+                  },
+                ),
+                BulkAction(
+                  icon: Icons.drive_file_move_outlined,
+                  label: 'Move',
+                  onPressed: _bulkMoveItems,
+                ),
+                BulkAction(
+                  icon: Icons.archive_outlined,
+                  label: 'Archive',
+                  onPressed: () {
+                    final ids = _selected.toList();
+                    _runBulk((r) => r.bulkArchive(ids));
+                  },
+                ),
+                BulkAction(
+                  icon: Icons.delete_outline,
+                  label: 'Delete',
+                  onPressed: _bulkDeleteItems,
+                ),
+              ],
+            )
+          : null,
       body: _items == null && _error == null
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -307,6 +459,9 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           ),
           child: ItemCard(
             item: item,
+            selectMode: _selectMode,
+            selected: _selected.contains(item.id),
+            onSelectToggle: () => _toggleSelect(item.id),
             onTap: isEditableType(item.type) ? () => _editItem(item) : null,
             onTogglePin: () => _togglePinItem(item),
             onDuplicate: () => _duplicateItem(item),

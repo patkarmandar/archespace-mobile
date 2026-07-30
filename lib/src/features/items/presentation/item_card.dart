@@ -15,6 +15,9 @@ class ItemCard extends StatelessWidget {
     this.onMove,
     this.onArchive,
     this.onDelete,
+    this.selectMode = false,
+    this.selected = false,
+    this.onSelectToggle,
   });
 
   final SpaceItem item;
@@ -24,13 +27,23 @@ class ItemCard extends StatelessWidget {
   final VoidCallback? onMove;
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
+  final bool selectMode;
+  final bool selected;
+  final VoidCallback? onSelectToggle;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      shape: selected
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: scheme.primary, width: 2),
+            )
+          : null,
       child: InkWell(
-        onTap: onTap,
+        onTap: selectMode ? onSelectToggle : onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -39,6 +52,15 @@ class ItemCard extends StatelessWidget {
             children: [
             Row(
               children: [
+                if (selectMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Icon(
+                      selected ? Icons.check_circle : Icons.circle_outlined,
+                      size: 20,
+                      color: selected ? scheme.primary : scheme.outline,
+                    ),
+                  ),
                 if (item.pinned)
                   const Padding(
                     padding: EdgeInsets.only(right: 6),
@@ -50,11 +72,12 @@ class ItemCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                if (onTogglePin != null ||
-                    onDuplicate != null ||
-                    onMove != null ||
-                    onArchive != null ||
-                    onDelete != null)
+                if (!selectMode &&
+                    (onTogglePin != null ||
+                        onDuplicate != null ||
+                        onMove != null ||
+                        onArchive != null ||
+                        onDelete != null))
                   SizedBox(
                     height: 32,
                     width: 32,

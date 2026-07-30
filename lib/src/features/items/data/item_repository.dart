@@ -134,6 +134,41 @@ class ItemRepository {
     }).eq('id', itemId);
   }
 
+  String _nowIso() => DateTime.now().toUtc().toIso8601String();
+
+  Future<void> bulkSetPinned(List<String> ids, bool pinned) async {
+    if (ids.isEmpty) return;
+    await _client
+        .from('space_items')
+        .update({'pinned': pinned}).inFilter('id', ids);
+  }
+
+  Future<void> bulkArchive(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _client
+        .from('space_items')
+        .update({'archived_at': _nowIso()}).inFilter('id', ids);
+  }
+
+  Future<void> bulkDelete(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _client
+        .from('space_items')
+        .update({'deleted_at': _nowIso()}).inFilter('id', ids);
+  }
+
+  Future<void> bulkMove(List<String> ids, String targetSpaceId) async {
+    var position = await _endPosition(targetSpaceId);
+    for (final id in ids) {
+      await _client.from('space_items').update({
+        'space_id': targetSpaceId,
+        'position': position,
+        'pinned': false,
+      }).eq('id', id);
+      position++;
+    }
+  }
+
   /// Create a new item at the end of the space (position = current count).
   Future<void> createItem({
     required String spaceId,

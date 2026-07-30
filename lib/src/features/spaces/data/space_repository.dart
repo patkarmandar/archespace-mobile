@@ -193,6 +193,27 @@ class SpaceRepository {
         .eq('id', id);
   }
 
+  String _nowIso() => DateTime.now().toUtc().toIso8601String();
+
+  Future<void> bulkSetPinned(List<String> ids, bool pinned) async {
+    if (ids.isEmpty) return;
+    await _client.from('spaces').update({'pinned': pinned}).inFilter('id', ids);
+  }
+
+  Future<void> bulkArchive(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _client
+        .from('spaces')
+        .update({'archived_at': _nowIso()}).inFilter('id', ids);
+  }
+
+  Future<void> bulkDelete(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _client
+        .from('spaces')
+        .update({'deleted_at': _nowIso()}).inFilter('id', ids);
+  }
+
   /// Soft-delete to the recycle bin (sets deleted_at), matching the web.
   Future<void> deleteSpace(String id) async {
     await _client

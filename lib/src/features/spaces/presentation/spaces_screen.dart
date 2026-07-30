@@ -9,6 +9,7 @@ import 'package:archespace_mobile/src/features/spaces/presentation/space_editor_
 import 'package:archespace_mobile/src/features/spaces/presentation/widgets/space_card.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
+import 'package:archespace_mobile/src/shared/widgets/bulk_action_bar.dart';
 import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
 import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
 
@@ -24,6 +25,8 @@ class _SpacesScreenState extends State<SpacesScreen> {
   Object? _error;
   bool _offline = false;
   TableWatcher? _watcher;
+  bool _selectMode = false;
+  final Set<String> _selected = {};
 
   @override
   void initState() {
@@ -75,6 +78,69 @@ class _SpacesScreenState extends State<SpacesScreen> {
         );
       }
     }
+  }
+
+  // ── Selection mode ──
+  void _enterSelect() => setState(() => _selectMode = true);
+
+  void _exitSelect() => setState(() {
+        _selectMode = false;
+        _selected.clear();
+      });
+
+  void _toggleSelect(String id) => setState(() {
+        if (!_selected.remove(id)) _selected.add(id);
+      });
+
+  void _selectAll() => setState(() {
+        _selected
+          ..clear()
+          ..addAll((_spaces ?? const <Space>[]).map((s) => s.id));
+      });
+
+  void _snack(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<void> _runBulk(Future<void> Function(SpaceRepository) op) async {
+    final ids = _selected.toList();
+    if (ids.isEmpty) return;
+    try {
+      await op(SpaceRepository(VaultSession.instance.masterKey));
+      if (mounted) {
+        _exitSelect();
+        _load();
+      }
+    } catch (_) {
+      _snack('Bulk action failed.');
+    }
+  }
+
+  Future<void> _bulkDelete() async {
+    final count = _selected.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Move $count ${count == 1 ? 'space' : 'spaces'} to bin?'),
+        content: const Text('They and their items go to the recycle bin.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Move to bin'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ids = _selected.toList();
+    await _runBulk((r) => r.bulkDelete(ids));
   }
 
   Future<void> _duplicateSpace(Space space) async {
@@ -157,36 +223,97 @@ class _SpacesScreenState extends State<SpacesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hasSpaces = (_spaces ?? const <Space>[]).isNotEmpty;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Spaces'),
-        actions: [
-          IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
+      appBar: _selectMode
+          ? AppBar(
+              leading: IconButton(
+                onPressed: _exitSelect,
+                icon: const Icon(Icons.close),
+                tooltip: 'Cancel',
+              ),
+              title: Text('${_selected.length} selected'),
+              actions: [
+                IconButton(
+                  onPressed: _selectAll,
+                  icon: const Icon(Icons.select_all),
+                  tooltip: 'Select all',
+                ),
+              ],
+            )
+          : AppBar(
+              title: const Text('Spaces'),
+              actions: [
+                IconButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
+                  ),
+                  icon: const Icon(Icons.search),
+                  tooltip: 'Search',
+                ),
+                if (hasSpaces)
+                  IconButton(
+                    onPressed: _enterSelect,
+                    icon: const Icon(Icons.checklist),
+                    tooltip: 'Select',
+                  ),
+                IconButton(
+                  onPressed: VaultSession.instance.lock,
+                  icon: const Icon(Icons.lock_outline),
+                  tooltip: 'Lock vault',
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+                  ),
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip: 'Settings',
+                ),
+              ],
             ),
-            icon: const Icon(Icons.search),
-            tooltip: 'Search',
-          ),
-          IconButton(
-            onPressed: VaultSession.instance.lock,
-            icon: const Icon(Icons.lock_outline),
-            tooltip: 'Lock vault',
-          ),
-          IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+      floatingActionButton: _selectMode
+          ? null
+          : FloatingActionButton(
+              onPressed: _createSpace,
+              tooltip: 'New space',
+              child: const Icon(Icons.add),
             ),
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createSpace,
-        tooltip: 'New space',
-        child: const Icon(Icons.add),
-      ),
+      bottomNavigationBar: _selectMode
+          ? BulkActionBar(
+              count: _selected.length,
+              actions: [
+                BulkAction(
+                  icon: Icons.push_pin,
+                  label: 'Pin',
+                  onPressed: () {
+                    final ids = _selected.toList();
+                    _runBulk((r) => r.bulkSetPinned(ids, true));
+                  },
+                ),
+                BulkAction(
+                  icon: Icons.push_pin_outlined,
+                  label: 'Unpin',
+                  onPressed: () {
+                    final ids = _selected.toList();
+                    _runBulk((r) => r.bulkSetPinned(ids, false));
+                  },
+                ),
+                BulkAction(
+                  icon: Icons.archive_outlined,
+                  label: 'Archive',
+                  onPressed: () {
+                    final ids = _selected.toList();
+                    _runBulk((r) => r.bulkArchive(ids));
+                  },
+                ),
+                BulkAction(
+                  icon: Icons.delete_outline,
+                  label: 'Delete',
+                  onPressed: _bulkDelete,
+                ),
+              ],
+            )
+          : null,
       body: _spaces == null && _error == null
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -219,6 +346,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
         final space = spaces[index];
         return SpaceCard(
           space: space,
+          selectMode: _selectMode,
+          selected: _selected.contains(space.id),
+          onSelectToggle: () => _toggleSelect(space.id),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => SpaceDetailScreen(space: space),
