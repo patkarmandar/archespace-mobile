@@ -17,6 +17,7 @@ class ItemCard extends StatelessWidget {
     this.onMove,
     this.onArchive,
     this.onDelete,
+    this.onExport,
     this.selectMode = false,
     this.selected = false,
     this.onSelectToggle,
@@ -29,6 +30,7 @@ class ItemCard extends StatelessWidget {
   final VoidCallback? onMove;
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
+  final VoidCallback? onExport;
   final bool selectMode;
   final bool selected;
   final VoidCallback? onSelectToggle;
@@ -98,6 +100,7 @@ class ItemCard extends StatelessWidget {
                         onDuplicate != null ||
                         onMove != null ||
                         onArchive != null ||
+                        onExport != null ||
                         onDelete != null))
                   SizedBox(
                     height: 32,
@@ -110,6 +113,7 @@ class ItemCard extends StatelessWidget {
                         if (value == 'pin') onTogglePin?.call();
                         if (value == 'duplicate') onDuplicate?.call();
                         if (value == 'move') onMove?.call();
+                        if (value == 'export') onExport?.call();
                         if (value == 'archive') onArchive?.call();
                         if (value == 'delete') onDelete?.call();
                       },
@@ -125,6 +129,9 @@ class ItemCard extends StatelessWidget {
                         if (onMove != null)
                           const PopupMenuItem(
                               value: 'move', child: Text('Move to space')),
+                        if (onExport != null)
+                          const PopupMenuItem(
+                              value: 'export', child: Text('Export PDF')),
                         if (onArchive != null)
                           const PopupMenuItem(
                               value: 'archive', child: Text('Archive')),

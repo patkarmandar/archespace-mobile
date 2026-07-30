@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 
 import 'package:archespace_mobile/src/features/items/data/item_repository.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
@@ -8,6 +9,7 @@ import 'package:archespace_mobile/src/features/items/presentation/item_editor_sc
 import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/shared/export/pdf_exporter.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
 import 'package:archespace_mobile/src/shared/widgets/bulk_action_bar.dart';
 import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
@@ -319,6 +321,30 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     }
   }
 
+  String _fileName(String name) {
+    final safe = name.trim().replaceAll(RegExp(r'[^A-Za-z0-9._ -]'), '_');
+    return '${safe.isEmpty ? 'export' : safe}.pdf';
+  }
+
+  Future<void> _exportSpace() async {
+    try {
+      final bytes = await PdfExporter.buildSpace(
+          widget.space.name, _items ?? const []);
+      await Printing.sharePdf(bytes: bytes, filename: _fileName(widget.space.name));
+    } catch (_) {
+      _showError('Could not export the space.');
+    }
+  }
+
+  Future<void> _exportItem(SpaceItem item) async {
+    try {
+      final bytes = await PdfExporter.buildItem(item);
+      await Printing.sharePdf(bytes: bytes, filename: _fileName(item.title));
+    } catch (_) {
+      _showError('Could not export the item.');
+    }
+  }
+
   Future<void> _addItem(String type) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -378,6 +404,12 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
               title: Text(
                   widget.space.name.isEmpty ? 'Untitled' : widget.space.name),
               actions: [
+                if (hasItems)
+                  IconButton(
+                    onPressed: _exportSpace,
+                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    tooltip: 'Export PDF',
+                  ),
                 if (hasItems)
                   IconButton(
                     onPressed: _enterSelect,
@@ -489,6 +521,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
             onDuplicate: () => _duplicateItem(item),
             onMove: () => _moveItem(item),
             onArchive: () => _archiveItem(item),
+            onExport: () => _exportItem(item),
             onDelete: () => _deleteItem(item),
             ),
           ),

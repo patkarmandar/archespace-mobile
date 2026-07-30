@@ -23,6 +23,9 @@ dependencies:
   path_provider: ^2.1.4
   # Persisted appearance preferences (theme mode + accent).
   shared_preferences: ^2.3.0
+  # PDF export + native share/print sheet.
+  pdf: ^3.11.0
+  printing: ^5.13.0
 
 dev_dependencies:
   flutter_test:
