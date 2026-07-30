@@ -5,6 +5,7 @@ import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 import 'package:archespace_mobile/src/features/items/presentation/item_card.dart';
 import 'package:archespace_mobile/src/features/items/presentation/item_editor_screen.dart';
+import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
@@ -109,6 +110,76 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           const SnackBar(content: Text('Could not update the item.')),
         );
       }
+    }
+  }
+
+  Future<void> _duplicateItem(SpaceItem item) async {
+    try {
+      await ItemRepository(VaultSession.instance.masterKey)
+          .duplicateItem(widget.space.id, item);
+      if (mounted) {
+        _load();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item duplicated')),
+        );
+      }
+    } catch (_) {
+      _showError('Could not duplicate the item.');
+    }
+  }
+
+  Future<void> _moveItem(SpaceItem item) async {
+    List<Space> spaces;
+    try {
+      spaces =
+          (await SpaceRepository(VaultSession.instance.masterKey).listSpaces())
+              .spaces;
+    } catch (_) {
+      _showError('Could not load spaces.');
+      return;
+    }
+    final destinations =
+        spaces.where((s) => s.id != widget.space.id).toList();
+    if (!mounted) return;
+    if (destinations.isEmpty) {
+      _showError('No other space to move to.');
+      return;
+    }
+    final target = await showModalBottomSheet<Space>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Text('Move to space',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            for (final s in destinations)
+              ListTile(
+                leading: const Icon(Icons.folder_outlined),
+                title: Text(s.name.isEmpty ? 'Untitled' : s.name),
+                onTap: () => Navigator.pop(sheetContext, s),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (target == null) return;
+    try {
+      await ItemRepository(VaultSession.instance.masterKey)
+          .moveItem(item.id, target.id);
+      if (mounted) {
+        _load();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Moved to ${target.name}')),
+        );
+      }
+    } catch (_) {
+      _showError('Could not move the item.');
     }
   }
 
@@ -238,6 +309,8 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
             item: item,
             onTap: isEditableType(item.type) ? () => _editItem(item) : null,
             onTogglePin: () => _togglePinItem(item),
+            onDuplicate: () => _duplicateItem(item),
+            onMove: () => _moveItem(item),
             onArchive: () => _archiveItem(item),
             onDelete: () => _deleteItem(item),
           ),

@@ -77,6 +77,25 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
   }
 
+  Future<void> _duplicateSpace(Space space) async {
+    try {
+      await SpaceRepository(VaultSession.instance.masterKey)
+          .duplicateSpace(space);
+      if (mounted) {
+        _load();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Space duplicated')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not duplicate the space.')),
+        );
+      }
+    }
+  }
+
   Future<void> _archiveSpace(Space space) async {
     try {
       await SpaceRepository(VaultSession.instance.masterKey)
@@ -207,6 +226,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
           ),
           onTogglePin: () => _togglePinSpace(space),
           onEdit: () => _editSpace(space),
+          onDuplicate: () => _duplicateSpace(space),
           onArchive: () => _archiveSpace(space),
           onDelete: () => _deleteSpace(space),
         );

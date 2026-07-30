@@ -105,6 +105,35 @@ class ItemRepository {
         .eq('id', id);
   }
 
+  Future<int> _endPosition(String spaceId) async {
+    final existing = await _client
+        .from('space_items')
+        .select('id')
+        .eq('space_id', spaceId)
+        .isFilter('deleted_at', null)
+        .isFilter('archived_at', null);
+    return existing.length;
+  }
+
+  Future<void> duplicateItem(String spaceId, SpaceItem item) async {
+    final title = item.title.isEmpty ? 'Untitled (copy)' : '${item.title} (copy)';
+    await _client.from('space_items').insert({
+      'space_id': spaceId,
+      'type': item.type,
+      'title': await _encTitle(title),
+      'content': await _encContent(item.content),
+      'position': await _endPosition(spaceId),
+    });
+  }
+
+  Future<void> moveItem(String itemId, String targetSpaceId) async {
+    await _client.from('space_items').update({
+      'space_id': targetSpaceId,
+      'position': await _endPosition(targetSpaceId),
+      'pinned': false,
+    }).eq('id', itemId);
+  }
+
   /// Create a new item at the end of the space (position = current count).
   Future<void> createItem({
     required String spaceId,

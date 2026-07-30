@@ -96,6 +96,57 @@ class SpaceRepository {
   Future<String> _enc(String value) =>
       ArcheCrypto.encryptArc1(value, _masterKey);
 
+  Future<String> _encTags(List<String> tags) =>
+      ArcheCrypto.encryptArc1(jsonEncode(tags), _masterKey);
+
+  /// Duplicate a space and all its (non-deleted, non-archived) items. Item
+  /// ciphertext is copied verbatim — it's already encrypted with the same key.
+  Future<void> duplicateSpace(Space space) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw StateError('Not authenticated');
+
+    final existing = await _client
+        .from('spaces')
+        .select('id')
+        .isFilter('deleted_at', null)
+        .isFilter('archived_at', null);
+
+    final payload = <String, dynamic>{
+      'user_id': userId,
+      'name': await _enc('${space.name} (copy)'),
+      'description': await _enc(space.description),
+      'color': space.color,
+      'position': existing.length,
+    };
+    if (space.tags.isNotEmpty) payload['tags'] = await _encTags(space.tags);
+
+    final created =
+        await _client.from('spaces').insert(payload).select('id').single();
+    final newId = created['id'] as String;
+
+    final srcItems = await _client
+        .from('space_items')
+        .select('type, title, content, position, pinned')
+        .eq('space_id', space.id)
+        .isFilter('deleted_at', null)
+        .isFilter('archived_at', null);
+
+    if (srcItems.isNotEmpty) {
+      final rows = [
+        for (final it in srcItems)
+          {
+            'space_id': newId,
+            'type': it['type'],
+            'title': it['title'],
+            'content': it['content'],
+            'position': it['position'],
+            'pinned': it['pinned'] ?? false,
+          },
+      ];
+      await _client.from('space_items').insert(rows);
+    }
+  }
+
   /// Create a new space at the end of the list (position = current count).
   Future<void> createSpace({
     required String name,

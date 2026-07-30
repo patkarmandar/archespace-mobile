@@ -11,6 +11,8 @@ class ItemCard extends StatelessWidget {
     required this.item,
     this.onTap,
     this.onTogglePin,
+    this.onDuplicate,
+    this.onMove,
     this.onArchive,
     this.onDelete,
   });
@@ -18,6 +20,8 @@ class ItemCard extends StatelessWidget {
   final SpaceItem item;
   final VoidCallback? onTap;
   final VoidCallback? onTogglePin;
+  final VoidCallback? onDuplicate;
+  final VoidCallback? onMove;
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
 
@@ -47,6 +51,8 @@ class ItemCard extends StatelessWidget {
                   ),
                 ),
                 if (onTogglePin != null ||
+                    onDuplicate != null ||
+                    onMove != null ||
                     onArchive != null ||
                     onDelete != null)
                   SizedBox(
@@ -58,6 +64,8 @@ class ItemCard extends StatelessWidget {
                       tooltip: 'Item actions',
                       onSelected: (value) {
                         if (value == 'pin') onTogglePin?.call();
+                        if (value == 'duplicate') onDuplicate?.call();
+                        if (value == 'move') onMove?.call();
                         if (value == 'archive') onArchive?.call();
                         if (value == 'delete') onDelete?.call();
                       },
@@ -67,6 +75,12 @@ class ItemCard extends StatelessWidget {
                             value: 'pin',
                             child: Text(item.pinned ? 'Unpin' : 'Pin'),
                           ),
+                        if (onDuplicate != null)
+                          const PopupMenuItem(
+                              value: 'duplicate', child: Text('Duplicate')),
+                        if (onMove != null)
+                          const PopupMenuItem(
+                              value: 'move', child: Text('Move to space')),
                         if (onArchive != null)
                           const PopupMenuItem(
                               value: 'archive', child: Text('Archive')),
