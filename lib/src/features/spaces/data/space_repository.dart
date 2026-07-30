@@ -151,6 +151,8 @@ class SpaceRepository {
   Future<void> createSpace({
     required String name,
     String description = '',
+    String? color,
+    List<String> tags = const [],
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw StateError('Not authenticated');
@@ -165,20 +167,24 @@ class SpaceRepository {
       'user_id': userId,
       'name': await _enc(name),
       'description': await _enc(description),
+      'color': color,
+      'tags': tags.isEmpty ? null : await _encTags(tags),
       'position': existing.length,
     });
   }
 
-  /// Update only the name + description; other columns (tags, color, pinned)
-  /// are left untouched.
   Future<void> updateSpace({
     required String id,
     required String name,
     String description = '',
+    String? color,
+    List<String> tags = const [],
   }) async {
     await _client.from('spaces').update({
       'name': await _enc(name),
       'description': await _enc(description),
+      'color': color,
+      'tags': tags.isEmpty ? null : await _encTags(tags),
     }).eq('id', id);
   }
 
