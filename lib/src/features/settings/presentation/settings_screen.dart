@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/backup/data/backup_repository.dart';
 import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
 import 'package:archespace_mobile/src/features/storage/presentation/storage_screen.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
@@ -45,6 +51,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+  void _snack(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<void> _exportBackup() async {
+    try {
+      final json =
+          await BackupRepository(VaultSession.instance.masterKey).exportJson();
+      final bytes = Uint8List.fromList(utf8.encode(json));
+      final date = DateTime.now().toIso8601String().substring(0, 10);
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save backup',
+        fileName: 'arche-backup-$date.json',
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        bytes: bytes,
+      );
+      if (path != null) _snack('Backup saved.');
+    } catch (_) {
+      _snack('Could not export the backup.');
+    }
+  }
+
+  Future<void> _importBackup() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+      );
+      final path = result?.files.single.path;
+      if (path == null) return;
+      final text = await File(path).readAsString();
+      final count = await BackupRepository(VaultSession.instance.masterKey)
+          .importJson(text);
+      _snack('Imported $count ${count == 1 ? 'item' : 'items'}.');
+    } on FormatException catch (e) {
+      _snack('Invalid backup: ${e.message}');
+    } catch (_) {
+      _snack('Could not import the backup.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final email = _auth.currentUser?.email;
@@ -62,6 +113,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const _SectionHeader('Appearance'),
             const _AppearanceSection(),
+            const _SectionHeader('Backup'),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: const Text('Export backup'),
+              subtitle: const Text('Save all spaces + items as a JSON file'),
+              onTap: _exportBackup,
+            ),
+            ListTile(
+              leading: const Icon(Icons.download_outlined),
+              title: const Text('Import backup'),
+              subtitle: const Text('Add spaces + items from a JSON file'),
+              onTap: _importBackup,
+            ),
             const _SectionHeader('Storage'),
             ListTile(
               leading: const Icon(Icons.archive_outlined),

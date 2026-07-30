@@ -26,6 +26,8 @@ dependencies:
   # PDF export + native share/print sheet.
   pdf: ^3.11.0
   printing: ^5.13.0
+  # Save / open the JSON backup file.
+  file_picker: ^8.1.0
 
 dev_dependencies:
   flutter_test:
