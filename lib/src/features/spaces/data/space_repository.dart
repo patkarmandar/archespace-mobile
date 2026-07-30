@@ -135,6 +135,13 @@ class SpaceRepository {
     await _client.from('spaces').update({'pinned': pinned}).eq('id', id);
   }
 
+  Future<void> archiveSpace(String id) async {
+    await _client
+        .from('spaces')
+        .update({'archived_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
+  }
+
   /// Soft-delete to the recycle bin (sets deleted_at), matching the web.
   Future<void> deleteSpace(String id) async {
     await _client

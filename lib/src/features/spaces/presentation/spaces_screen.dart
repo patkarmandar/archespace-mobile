@@ -77,6 +77,25 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
   }
 
+  Future<void> _archiveSpace(Space space) async {
+    try {
+      await SpaceRepository(VaultSession.instance.masterKey)
+          .archiveSpace(space.id);
+      if (mounted) {
+        _load();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Space archived')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not archive the space.')),
+        );
+      }
+    }
+  }
+
   Future<void> _editSpace(Space space) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => SpaceEditorScreen(existing: space)),
@@ -188,6 +207,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
           ),
           onTogglePin: () => _togglePinSpace(space),
           onEdit: () => _editSpace(space),
+          onArchive: () => _archiveSpace(space),
           onDelete: () => _deleteSpace(space),
         );
       },

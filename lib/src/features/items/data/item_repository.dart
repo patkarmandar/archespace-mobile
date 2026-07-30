@@ -91,6 +91,20 @@ class ItemRepository {
     await _client.from('space_items').update({'pinned': pinned}).eq('id', id);
   }
 
+  Future<void> archiveItem(String id) async {
+    await _client
+        .from('space_items')
+        .update({'archived_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
+  }
+
+  Future<void> deleteItem(String id) async {
+    await _client
+        .from('space_items')
+        .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id);
+  }
+
   /// Create a new item at the end of the space (position = current count).
   Future<void> createItem({
     required String spaceId,

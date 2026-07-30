@@ -13,6 +13,7 @@ class SpaceCard extends StatelessWidget {
     required this.onTap,
     required this.onTogglePin,
     required this.onEdit,
+    required this.onArchive,
     required this.onDelete,
   });
 
@@ -20,6 +21,7 @@ class SpaceCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onTogglePin;
   final VoidCallback onEdit;
+  final VoidCallback onArchive;
   final VoidCallback onDelete;
 
   String get _countLabel {
@@ -135,6 +137,7 @@ class SpaceCard extends StatelessWidget {
                       onSelected: (value) {
                         if (value == 'pin') onTogglePin();
                         if (value == 'edit') onEdit();
+                        if (value == 'archive') onArchive();
                         if (value == 'delete') onDelete();
                       },
                       itemBuilder: (context) => [
@@ -143,6 +146,8 @@ class SpaceCard extends StatelessWidget {
                           child: Text(space.pinned ? 'Unpin' : 'Pin'),
                         ),
                         const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        const PopupMenuItem(
+                            value: 'archive', child: Text('Archive')),
                         const PopupMenuItem(value: 'delete', child: Text('Delete')),
                       ],
                     ),

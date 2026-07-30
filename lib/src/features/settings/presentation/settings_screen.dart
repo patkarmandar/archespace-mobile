@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
+import 'package:archespace_mobile/src/features/storage/presentation/storage_screen.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
 
@@ -61,6 +62,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const _SectionHeader('Appearance'),
             const _AppearanceSection(),
+            const _SectionHeader('Storage'),
+            ListTile(
+              leading: const Icon(Icons.archive_outlined),
+              title: const Text('Archive'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const StorageScreen(mode: StorageMode.archive),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Recycle bin'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const StorageScreen(mode: StorageMode.bin),
+                ),
+              ),
+            ),
             const _SectionHeader('Security'),
             ListTile(
               leading: const Icon(Icons.lock_outline),

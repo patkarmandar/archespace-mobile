@@ -112,6 +112,41 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     }
   }
 
+  Future<void> _archiveItem(SpaceItem item) async {
+    try {
+      await ItemRepository(VaultSession.instance.masterKey).archiveItem(item.id);
+      if (mounted) {
+        _load();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item archived')),
+        );
+      }
+    } catch (_) {
+      _showError('Could not archive the item.');
+    }
+  }
+
+  Future<void> _deleteItem(SpaceItem item) async {
+    try {
+      await ItemRepository(VaultSession.instance.masterKey).deleteItem(item.id);
+      if (mounted) {
+        _load();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item moved to recycle bin')),
+        );
+      }
+    } catch (_) {
+      _showError('Could not delete the item.');
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   Future<void> _addItem(String type) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -203,6 +238,8 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
             item: item,
             onTap: isEditableType(item.type) ? () => _editItem(item) : null,
             onTogglePin: () => _togglePinItem(item),
+            onArchive: () => _archiveItem(item),
+            onDelete: () => _deleteItem(item),
           ),
         );
       },

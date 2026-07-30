@@ -6,11 +6,20 @@ import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 /// Renders one space item as a card: title plus a type-specific body.
 /// Read-only for this slice (editing comes later).
 class ItemCard extends StatelessWidget {
-  const ItemCard({super.key, required this.item, this.onTap, this.onTogglePin});
+  const ItemCard({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.onTogglePin,
+    this.onArchive,
+    this.onDelete,
+  });
 
   final SpaceItem item;
   final VoidCallback? onTap;
   final VoidCallback? onTogglePin;
+  final VoidCallback? onArchive;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +46,9 @@ class ItemCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                if (onTogglePin != null)
+                if (onTogglePin != null ||
+                    onArchive != null ||
+                    onDelete != null)
                   SizedBox(
                     height: 32,
                     width: 32,
@@ -46,13 +57,22 @@ class ItemCard extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       tooltip: 'Item actions',
                       onSelected: (value) {
-                        if (value == 'pin') onTogglePin!();
+                        if (value == 'pin') onTogglePin?.call();
+                        if (value == 'archive') onArchive?.call();
+                        if (value == 'delete') onDelete?.call();
                       },
                       itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'pin',
-                          child: Text(item.pinned ? 'Unpin' : 'Pin'),
-                        ),
+                        if (onTogglePin != null)
+                          PopupMenuItem(
+                            value: 'pin',
+                            child: Text(item.pinned ? 'Unpin' : 'Pin'),
+                          ),
+                        if (onArchive != null)
+                          const PopupMenuItem(
+                              value: 'archive', child: Text('Archive')),
+                        if (onDelete != null)
+                          const PopupMenuItem(
+                              value: 'delete', child: Text('Delete')),
                       ],
                     ),
                   ),
