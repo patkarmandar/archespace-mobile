@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import 'package:archespace_mobile/src/features/items/domain/item_clipboard.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
 /// Renders one space item as a card: title plus a type-specific body.
@@ -72,6 +74,25 @@ class ItemCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
+                if (!selectMode && isCopyableType(item.type))
+                  SizedBox(
+                    height: 32,
+                    width: 32,
+                    child: IconButton(
+                      icon: const Icon(Icons.content_copy, size: 16),
+                      padding: EdgeInsets.zero,
+                      tooltip: 'Copy',
+                      onPressed: () async {
+                        await Clipboard.setData(
+                            ClipboardData(text: itemClipboardText(item)));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Copied to clipboard')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 if (!selectMode &&
                     (onTogglePin != null ||
                         onDuplicate != null ||
