@@ -11,12 +11,14 @@ class SpaceCard extends StatelessWidget {
     super.key,
     required this.space,
     required this.onTap,
+    required this.onTogglePin,
     required this.onEdit,
     required this.onDelete,
   });
 
   final Space space;
   final VoidCallback onTap;
+  final VoidCallback onTogglePin;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -131,12 +133,17 @@ class SpaceCard extends StatelessWidget {
                       icon: const Icon(Icons.more_horiz, size: 18),
                       tooltip: 'Space actions',
                       onSelected: (value) {
+                        if (value == 'pin') onTogglePin();
                         if (value == 'edit') onEdit();
                         if (value == 'delete') onDelete();
                       },
-                      itemBuilder: (context) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        PopupMenuItem(value: 'delete', child: Text('Delete')),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'pin',
+                          child: Text(space.pinned ? 'Unpin' : 'Pin'),
+                        ),
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        const PopupMenuItem(value: 'delete', child: Text('Delete')),
                       ],
                     ),
                   ),

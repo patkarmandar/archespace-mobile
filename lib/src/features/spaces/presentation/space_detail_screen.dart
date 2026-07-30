@@ -98,6 +98,20 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     if (saved == true && mounted) _load();
   }
 
+  Future<void> _togglePinItem(SpaceItem item) async {
+    try {
+      await ItemRepository(VaultSession.instance.masterKey)
+          .setPinned(item.id, !item.pinned);
+      if (mounted) _load();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not update the item.')),
+        );
+      }
+    }
+  }
+
   Future<void> _addItem(String type) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -188,6 +202,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           child: ItemCard(
             item: item,
             onTap: isEditableType(item.type) ? () => _editItem(item) : null,
+            onTogglePin: () => _togglePinItem(item),
           ),
         );
       },

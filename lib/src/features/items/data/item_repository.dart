@@ -87,6 +87,10 @@ class ItemRepository {
     }).eq('id', id);
   }
 
+  Future<void> setPinned(String id, bool pinned) async {
+    await _client.from('space_items').update({'pinned': pinned}).eq('id', id);
+  }
+
   /// Create a new item at the end of the space (position = current count).
   Future<void> createItem({
     required String spaceId,

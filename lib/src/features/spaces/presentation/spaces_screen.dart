@@ -63,6 +63,20 @@ class _SpacesScreenState extends State<SpacesScreen> {
     if (saved == true && mounted) _load();
   }
 
+  Future<void> _togglePinSpace(Space space) async {
+    try {
+      await SpaceRepository(VaultSession.instance.masterKey)
+          .setPinned(space.id, !space.pinned);
+      if (mounted) _load();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not update the space.')),
+        );
+      }
+    }
+  }
+
   Future<void> _editSpace(Space space) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => SpaceEditorScreen(existing: space)),
@@ -172,6 +186,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
               builder: (_) => SpaceDetailScreen(space: space),
             ),
           ),
+          onTogglePin: () => _togglePinSpace(space),
           onEdit: () => _editSpace(space),
           onDelete: () => _deleteSpace(space),
         );

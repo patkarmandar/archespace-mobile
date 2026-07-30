@@ -6,10 +6,11 @@ import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 /// Renders one space item as a card: title plus a type-specific body.
 /// Read-only for this slice (editing comes later).
 class ItemCard extends StatelessWidget {
-  const ItemCard({super.key, required this.item, this.onTap});
+  const ItemCard({super.key, required this.item, this.onTap, this.onTogglePin});
 
   final SpaceItem item;
   final VoidCallback? onTap;
+  final VoidCallback? onTogglePin;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +37,25 @@ class ItemCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
+                if (onTogglePin != null)
+                  SizedBox(
+                    height: 32,
+                    width: 32,
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, size: 18),
+                      padding: EdgeInsets.zero,
+                      tooltip: 'Item actions',
+                      onSelected: (value) {
+                        if (value == 'pin') onTogglePin!();
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'pin',
+                          child: Text(item.pinned ? 'Unpin' : 'Pin'),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 8),

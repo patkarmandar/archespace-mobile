@@ -131,6 +131,10 @@ class SpaceRepository {
     }).eq('id', id);
   }
 
+  Future<void> setPinned(String id, bool pinned) async {
+    await _client.from('spaces').update({'pinned': pinned}).eq('id', id);
+  }
+
   /// Soft-delete to the recycle bin (sets deleted_at), matching the web.
   Future<void> deleteSpace(String id) async {
     await _client
