@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 import 'package:archespace_mobile/src/shared/data/cache_store.dart';
+import 'package:archespace_mobile/src/shared/offline/write_queue.dart';
 
 /// Reads spaces from Supabase and decrypts them with the master key. Encrypted
 /// columns (`name`, `description`) are `arc1` values; everything else is plain
@@ -50,6 +51,7 @@ class SpaceRepository {
         m['_pinned_count'] = pinned[m['id']] ?? 0;
       }
       await CacheStore.write(cacheKey, rows);
+      WriteQueue.instance.flush(); // network is up: drain any queued writes
     } catch (_) {
       final cached = await CacheStore.read(cacheKey);
       if (cached is List) {

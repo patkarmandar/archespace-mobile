@@ -38,6 +38,26 @@ class CacheStore {
     }
   }
 
+  /// Read a cached list of rows (empty if absent / not a list).
+  static Future<List<Map<String, dynamic>>> readRows(String key) async {
+    final data = await read(key);
+    if (data is List) return data.cast<Map<String, dynamic>>();
+    return [];
+  }
+
+  /// Insert or merge a row (by `id`) into a cached list, for optimistic
+  /// offline updates.
+  static Future<void> upsertRow(String key, Map<String, dynamic> row) async {
+    final rows = await readRows(key);
+    final index = rows.indexWhere((r) => r['id'] == row['id']);
+    if (index >= 0) {
+      rows[index] = {...rows[index], ...row};
+    } else {
+      rows.add(row);
+    }
+    await write(key, rows);
+  }
+
   /// Wipe the whole cache (e.g. on sign-out, so the next account can't read it).
   static Future<void> clear() async {
     try {

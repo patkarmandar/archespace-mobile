@@ -8,6 +8,7 @@ import 'package:archespace_mobile/src/features/spaces/presentation/space_detail_
 import 'package:archespace_mobile/src/features/spaces/presentation/space_editor_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/widgets/space_card.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/shared/offline/write_queue.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
 import 'package:archespace_mobile/src/shared/sort/sort.dart';
 import 'package:archespace_mobile/src/shared/widgets/bulk_action_bar.dart';
@@ -353,6 +354,28 @@ class _SpacesScreenState extends State<SpacesScreen> {
               child: Column(
                 children: [
                   if (_offline) const OfflineBanner(),
+                  ValueListenableBuilder<int>(
+                    valueListenable: WriteQueue.instance.pending,
+                    builder: (context, count, _) => count == 0
+                        ? const SizedBox.shrink()
+                        : Container(
+                            width: double.infinity,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .tertiaryContainer,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: Text(
+                              '$count change${count == 1 ? '' : 's'} waiting to sync',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onTertiaryContainer,
+                              ),
+                            ),
+                          ),
+                  ),
                   Expanded(
                     child: RefreshIndicator(onRefresh: _load, child: _body()),
                   ),

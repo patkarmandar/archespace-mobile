@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 import 'package:archespace_mobile/src/shared/data/cache_store.dart';
+import 'package:archespace_mobile/src/shared/offline/write_queue.dart';
+import 'package:archespace_mobile/src/shared/util/uuid.dart';
 
 /// Reads and decrypts the items in a space. The `title` column is an `arc1`
 /// string and `content` is `arc1(JSON.stringify(obj))`; everything else is
@@ -32,6 +34,7 @@ class ItemRepository {
           .order('pinned', ascending: false)
           .order('position', ascending: true);
       await CacheStore.write(cacheKey, rows);
+      WriteQueue.instance.flush(); // network is up: drain any queued writes
     } catch (_) {
       final cached = await CacheStore.read(cacheKey);
       if (cached is List) {
@@ -76,16 +79,20 @@ class ItemRepository {
   Future<String> _encContent(Map<String, dynamic> content) =>
       ArcheCrypto.encryptArc1(jsonEncode(content), _masterKey);
 
-  /// Re-encrypt and save an existing item's title + content.
+  /// Re-encrypt and save an existing item's title + content. Queued offline.
   Future<void> updateItem({
     required String id,
+    required String spaceId,
     required String title,
     required Map<String, dynamic> content,
   }) async {
-    await _client.from('space_items').update({
+    final row = {
+      'id': id,
       'title': await _encTitle(title),
       'content': await _encContent(content),
-    }).eq('id', id);
+    };
+    await WriteQueue.instance.upsert('space_items', row);
+    await CacheStore.upsertRow('items_$spaceId', row);
   }
 
   Future<void> setPinned(String id, bool pinned) async {
@@ -179,26 +186,27 @@ class ItemRepository {
     }
   }
 
-  /// Create a new item at the end of the space (position = current count).
+  /// Create a new item. Uses a client-generated id + cache-based position so it
+  /// works offline (queued) and appears immediately in the cache.
   Future<void> createItem({
     required String spaceId,
     required String type,
     String title = '',
     required Map<String, dynamic> content,
   }) async {
-    final existing = await _client
-        .from('space_items')
-        .select('id')
-        .eq('space_id', spaceId)
-        .isFilter('deleted_at', null)
-        .isFilter('archived_at', null);
-
-    await _client.from('space_items').insert({
+    final cacheKey = 'items_$spaceId';
+    final position = (await CacheStore.readRows(cacheKey)).length;
+    final row = {
+      'id': newUuid(),
       'space_id': spaceId,
       'type': type,
       'title': await _encTitle(title),
       'content': await _encContent(content),
-      'position': existing.length,
-    });
+      'position': position,
+      'pinned': false,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    };
+    await WriteQueue.instance.upsert('space_items', row);
+    await CacheStore.upsertRow(cacheKey, row);
   }
 }

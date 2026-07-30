@@ -61,6 +61,7 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
       if (widget.existing != null) {
         await repo.updateItem(
           id: widget.existing!.id,
+          spaceId: widget.spaceId,
           title: _title.text.trim(),
           content: _content,
         );
