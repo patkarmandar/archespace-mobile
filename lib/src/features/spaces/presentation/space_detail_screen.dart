@@ -120,6 +120,24 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           ..addAll((_items ?? const <SpaceItem>[]).map((i) => i.id));
       });
 
+  void _onReorder(int oldIndex, int newIndex) {
+    final list = List<SpaceItem>.of(_items ?? const []);
+    if (newIndex > oldIndex) newIndex -= 1;
+    list.insert(newIndex, list.removeAt(oldIndex));
+    setState(() => _items = list);
+    _persistOrder(list);
+  }
+
+  Future<void> _persistOrder(List<SpaceItem> list) async {
+    try {
+      await ItemRepository(VaultSession.instance.masterKey)
+          .reorder(list.map((i) => i.id).toList());
+    } catch (_) {
+      _showError('Could not save the new order.');
+      if (mounted) _load();
+    }
+  }
+
   Future<void> _runBulk(Future<void> Function(ItemRepository) op) async {
     if (_selected.isEmpty) return;
     try {
@@ -440,15 +458,17 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     if (items.isEmpty) {
       return const ScrollableMessage('No items in this space.');
     }
-    return ListView.builder(
+    return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 8, bottom: 88),
+      buildDefaultDragHandles: !_selectMode && !_offline,
+      onReorder: _onReorder,
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
         final isFocus = item.id == widget.focusItemId;
         return AnimatedContainer(
-          key: isFocus ? _focusKey : null,
+          key: ValueKey(item.id),
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
@@ -457,7 +477,9 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
                 ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
                 : Colors.transparent,
           ),
-          child: ItemCard(
+          child: KeyedSubtree(
+            key: isFocus ? _focusKey : null,
+            child: ItemCard(
             item: item,
             selectMode: _selectMode,
             selected: _selected.contains(item.id),
@@ -468,6 +490,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
             onMove: () => _moveItem(item),
             onArchive: () => _archiveItem(item),
             onDelete: () => _deleteItem(item),
+            ),
           ),
         );
       },

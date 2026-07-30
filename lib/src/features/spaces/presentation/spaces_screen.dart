@@ -105,6 +105,24 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
   }
 
+  void _onReorder(int oldIndex, int newIndex) {
+    final list = List<Space>.of(_spaces ?? const []);
+    if (newIndex > oldIndex) newIndex -= 1;
+    list.insert(newIndex, list.removeAt(oldIndex));
+    setState(() => _spaces = list);
+    _persistOrder(list);
+  }
+
+  Future<void> _persistOrder(List<Space> list) async {
+    try {
+      await SpaceRepository(VaultSession.instance.masterKey)
+          .reorder(list.map((s) => s.id).toList());
+    } catch (_) {
+      _snack('Could not save the new order.');
+      if (mounted) _load();
+    }
+  }
+
   Future<void> _runBulk(Future<void> Function(SpaceRepository) op) async {
     final ids = _selected.toList();
     if (ids.isEmpty) return;
@@ -338,13 +356,16 @@ class _SpacesScreenState extends State<SpacesScreen> {
     if (spaces.isEmpty) {
       return const ScrollableMessage('No spaces yet.');
     }
-    return ListView.builder(
+    return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 4, bottom: 88),
+      buildDefaultDragHandles: !_selectMode && !_offline,
+      onReorder: _onReorder,
       itemCount: spaces.length,
       itemBuilder: (context, index) {
         final space = spaces[index];
         return SpaceCard(
+          key: ValueKey(space.id),
           space: space,
           selectMode: _selectMode,
           selected: _selected.contains(space.id),

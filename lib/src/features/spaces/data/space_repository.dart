@@ -201,6 +201,15 @@ class SpaceRepository {
 
   String _nowIso() => DateTime.now().toUtc().toIso8601String();
 
+  /// Persist a new order (positions 0..N-1) via the batch RPC.
+  Future<void> reorder(List<String> orderedIds) async {
+    final updates = [
+      for (var i = 0; i < orderedIds.length; i++)
+        {'id': orderedIds[i], 'position': i},
+    ];
+    await _client.rpc('update_space_positions', params: {'updates': updates});
+  }
+
   Future<void> bulkSetPinned(List<String> ids, bool pinned) async {
     if (ids.isEmpty) return;
     await _client.from('spaces').update({'pinned': pinned}).inFilter('id', ids);
