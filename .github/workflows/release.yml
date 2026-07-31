@@ -1,0 +1,101 @@
+name: Release APK
+
+# Builds a release APK stamped with the exact source commit, so the build hash
+# shown in Settings links to verifiable, open-source code. Publishes the APK and
+# a SHA-256 checksum to a GitHub Release. Triggered by pushing a v* tag.
+#
+# Requires two repository secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_URL       - same value as env.json / the web VITE_SUPABASE_URL
+#   SUPABASE_ANON_KEY  - same value as env.json / the web VITE_SUPABASE_ANON_KEY
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or ref to build (e.g. v0.1.0)'
+        required: true
+
+permissions:
+  contents: write   # create the GitHub Release and upload the APK
+
+concurrency:
+  group: release-${{ github.event.inputs.ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      REF: ${{ github.event.inputs.ref || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0   # full history so the commit hash resolves
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Derive the build-provenance values from git so the APK is stamped.
+      - name: Compute build metadata
+        run: |
+          echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "BUILD_TIME=$(git log -1 --format=%cI)" >> "$GITHUB_ENV"
+          VERSION="${REF#v}"
+          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=APP_VERSION="$APP_VERSION" \
+            --dart-define=BUILD_HASH="$BUILD_HASH" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
+
+      - name: Rename and checksum the APK
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          OUT="archespace-${REF}-${BUILD_HASH}.apk"
+          cp "$APK" "$OUT"
+          sha256sum "$OUT" > "${OUT}.sha256"
+          echo "APK_OUT=$OUT" >> "$GITHUB_ENV"
+          echo "Built $OUT (commit $BUILD_HASH):"
+          cat "${OUT}.sha256"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="$REF" --jq .body > notes.md || true
+          {
+            if [ -s notes.md ]; then
+              cat notes.md
+              echo
+              echo "---"
+              echo
+            fi
+            echo "Release APK built from commit \`${BUILD_HASH}\`."
+            echo "The build hash in Settings links to this commit's source."
+          } > release-notes.md
+          gh release create "$REF" \
+            --title "$REF" \
+            --notes-file release-notes.md \
+            "$APK_OUT" \
+            "${APK_OUT}.sha256"
