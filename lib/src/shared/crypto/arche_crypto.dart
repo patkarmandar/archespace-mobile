@@ -23,6 +23,13 @@ class ArcheCrypto {
   static const _argonIterations = 2;
   static const _argonParallelism = 1;
 
+  /// Generate a fresh random 32-byte AES-256 master key. Equivalent to the
+  /// web's `crypto.subtle.generateKey` + raw export.
+  static Uint8List randomAesKey() {
+    final rng = Random.secure();
+    return Uint8List.fromList(List<int>.generate(32, (_) => rng.nextInt(256)));
+  }
+
   /// Build a self-describing salt descriptor for a NEW wrapping key, matching
   /// the web `newSaltDescriptor()`: `argon2id$<m>$<t>$<p>$<saltB64>` with a
   /// fresh 16-byte random salt. [deriveVaultKey] reads the params back out.

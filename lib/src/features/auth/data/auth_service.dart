@@ -13,6 +13,16 @@ class AuthService {
     await _client.auth.signInWithPassword(email: email, password: password);
   }
 
+  /// Register a new account. When email confirmation is disabled in Supabase,
+  /// the response carries a live [Session] and the user is signed in
+  /// immediately; otherwise they must confirm via email before signing in.
+  Future<AuthResponse> signUp({
+    required String email,
+    required String password,
+  }) {
+    return _client.auth.signUp(email: email, password: password);
+  }
+
   Future<void> signOut() async {
     await _client.auth.signOut();
   }

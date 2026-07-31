@@ -50,6 +50,23 @@ class VaultService {
     return _unlockWithPin(meta, pin);
   }
 
+  /// Create a brand-new vault for a user who has none: generate a random master
+  /// key, wrap it under [pin], and also wrap it under a fresh one-time recovery
+  /// code. Returns the master key (to unlock the session) and the recovery code
+  /// (to show once). Mirrors the web `setupUserVault`.
+  Future<({Uint8List masterKey, String recoveryCode})> setupVault(
+    String userId,
+    String pin,
+  ) async {
+    final pinErr = validateVaultPin(pin);
+    if (pinErr != null) throw VaultException(pinErr);
+
+    final masterKey = ArcheCrypto.randomAesKey();
+    final recoveryCode = generateRecoveryCode();
+    await _persistPinWrapped(userId, pin, masterKey, recoveryCode: recoveryCode);
+    return (masterKey: masterKey, recoveryCode: recoveryCode);
+  }
+
   /// Verify the current PIN, then re-wrap the master key under [newPin].
   /// Returns the unchanged master key. Leaves any recovery code untouched.
   Future<Uint8List> changePin(

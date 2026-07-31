@@ -5,11 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
+import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/auth/presentation/login_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/spaces_screen.dart';
 import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
 import 'package:archespace_mobile/src/features/vault/presentation/unlock_screen.dart';
+import 'package:archespace_mobile/src/features/vault/presentation/vault_setup_screen.dart';
 import 'package:archespace_mobile/src/shared/data/cache_store.dart';
 
 class ArcheApp extends StatelessWidget {
@@ -80,7 +82,47 @@ class _RootGateState extends State<_RootGate> {
     return ValueListenableBuilder<bool>(
       valueListenable: VaultSession.instance.unlocked,
       builder: (context, unlocked, _) =>
-          unlocked ? const SpacesScreen() : const UnlockScreen(),
+          unlocked ? const SpacesScreen() : const _VaultGate(),
+    );
+  }
+}
+
+/// A signed-in but locked user either has an existing vault (show the unlock
+/// screen) or is brand new (show first-run vault setup). Checks once per gate.
+class _VaultGate extends StatefulWidget {
+  const _VaultGate();
+
+  @override
+  State<_VaultGate> createState() => _VaultGateState();
+}
+
+class _VaultGateState extends State<_VaultGate> {
+  late final Future<bool> _hasVault;
+
+  @override
+  void initState() {
+    super.initState();
+    final userId = AuthService().currentUser?.id;
+    _hasVault = userId == null
+        ? Future<bool>.value(true)
+        : VaultService().hasVault(userId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _hasVault,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        // On error, assume a vault exists and fall back to the unlock screen
+        // rather than risk overwriting one with a fresh setup.
+        final needsSetup = snapshot.data == false;
+        return needsSetup ? const VaultSetupScreen() : const UnlockScreen();
+      },
     );
   }
 }
