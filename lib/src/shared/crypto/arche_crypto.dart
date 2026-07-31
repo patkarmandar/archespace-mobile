@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
@@ -15,6 +16,23 @@ class ArcheCrypto {
   static const _prefix = 'arc1:';
   static const _tagLength = 16; // AES-GCM 128-bit auth tag
   static final AesGcm _aes = AesGcm.with256bits(nonceLength: 12);
+
+  // Argon2id parameters for new vaults, matching the web (OWASP-aligned):
+  // 19 MiB, 2 passes, 1 lane.
+  static const _argonMemory = 19456; // KiB
+  static const _argonIterations = 2;
+  static const _argonParallelism = 1;
+
+  /// Build a self-describing salt descriptor for a NEW wrapping key, matching
+  /// the web `newSaltDescriptor()`: `argon2id$<m>$<t>$<p>$<saltB64>` with a
+  /// fresh 16-byte random salt. [deriveVaultKey] reads the params back out.
+  static String newSaltDescriptor() {
+    final rng = Random.secure();
+    final salt = Uint8List.fromList(
+      List<int>.generate(16, (_) => rng.nextInt(256)),
+    );
+    return 'argon2id\$$_argonMemory\$$_argonIterations\$$_argonParallelism\$${base64.encode(salt)}';
+  }
 
   /// Derive the 32-byte AES key from a vault secret using the KDF described by
   /// the self-describing [descriptor] (`argon2id$m$t$p$saltB64`, or a plain

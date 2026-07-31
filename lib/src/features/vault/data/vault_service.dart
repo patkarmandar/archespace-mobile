@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:archespace_mobile/src/features/vault/domain/recovery_code.dart';
+import 'package:archespace_mobile/src/features/vault/domain/vault_pin.dart';
 import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 
 class VaultException implements Exception {
@@ -12,12 +14,17 @@ class VaultException implements Exception {
   String toString() => message;
 }
 
-/// Fetches the user's `user_encryption` row and unlocks the vault, mirroring the
-/// web `unlockPinWrappedVault` flow (see spec/crypto-format.md section 4).
+/// Fetches the user's `user_encryption` row and unlocks or re-wraps the vault,
+/// mirroring the web `vault.js` flow (see spec/crypto-format.md section 4).
+///
+/// The master AES key never leaves the client. Changing a PIN or recovery code
+/// re-wraps the same master key under a freshly derived key, so already
+/// encrypted rows keep decrypting without a re-encrypt pass.
 class VaultService {
   SupabaseClient get _client => Supabase.instance.client;
 
   static const String _checkPlaintext = 'ARCHE_VAULT_V1_OK';
+  static const String _vaultFormat = 'pin_wrapped';
 
   Future<bool> hasVault(String userId) async {
     final row = await _client
@@ -40,7 +47,93 @@ class VaultService {
     if (meta == null) {
       throw VaultException('No vault PIN is configured for this account.');
     }
+    return _unlockWithPin(meta, pin);
+  }
 
+  /// Verify the current PIN, then re-wrap the master key under [newPin].
+  /// Returns the unchanged master key. Leaves any recovery code untouched.
+  Future<Uint8List> changePin(
+    String userId,
+    String currentPin,
+    String newPin,
+  ) async {
+    final pinErr = validateVaultPin(newPin);
+    if (pinErr != null) throw VaultException(pinErr);
+
+    final meta = await _client
+        .from('user_encryption')
+        .select('salt, key_check, wrapped_key')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (meta == null) {
+      throw VaultException('No vault PIN is configured for this account.');
+    }
+
+    final masterKey = await _unlockWithPin(meta, currentPin);
+    await _persistPinWrapped(userId, newPin, masterKey);
+    return masterKey;
+  }
+
+  /// Verify the current PIN, then create (or replace) the one-time recovery
+  /// code that also wraps the master key. Returns the plaintext recovery code
+  /// to show once.
+  Future<String> createRecoveryCode(String userId, String currentPin) async {
+    final meta = await _client
+        .from('user_encryption')
+        .select('salt, key_check, wrapped_key')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (meta == null) {
+      throw VaultException('No vault PIN is configured for this account.');
+    }
+
+    final masterKey = await _unlockWithPin(meta, currentPin);
+    final recoveryCode = generateRecoveryCode();
+    final recoverySalt = ArcheCrypto.newSaltDescriptor();
+    final recoveryKey =
+        await ArcheCrypto.deriveVaultKey(recoveryCode, recoverySalt);
+    final rawB64 = base64.encode(masterKey);
+    final recoveryWrapped = await ArcheCrypto.encryptArc1(rawB64, recoveryKey);
+
+    await _client.from('user_encryption').update({
+      'recovery_salt': recoverySalt,
+      'recovery_wrapped_key': recoveryWrapped,
+    }).eq('user_id', userId);
+
+    return recoveryCode;
+  }
+
+  /// Unlock with the recovery code, set [newPin], and rotate the recovery code.
+  /// Returns the new recovery code to show once.
+  Future<String> changePinWithRecoveryCode(
+    String userId,
+    String recoveryCode,
+    String newPin,
+  ) async {
+    final pinErr = validateVaultPin(newPin);
+    if (pinErr != null) throw VaultException(pinErr);
+    final codeErr = validateRecoveryCode(recoveryCode);
+    if (codeErr != null) throw VaultException(codeErr);
+
+    final meta = await _client
+        .from('user_encryption')
+        .select('key_check, recovery_salt, recovery_wrapped_key')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (meta == null) {
+      throw VaultException('No vault PIN is configured for this account.');
+    }
+    if (meta['recovery_salt'] == null || meta['recovery_wrapped_key'] == null) {
+      throw VaultException('No recovery code is configured for this vault.');
+    }
+
+    final masterKey = await _unlockWithRecovery(meta, recoveryCode);
+    final nextCode = generateRecoveryCode();
+    await _persistPinWrapped(userId, newPin, masterKey, recoveryCode: nextCode);
+    return nextCode;
+  }
+
+  Future<Uint8List> _unlockWithPin(Map<String, dynamic> meta, String pin) async {
     final pinKey = await ArcheCrypto.deriveVaultKey(pin, meta['salt'] as String);
 
     String rawKeyB64;
@@ -59,5 +152,68 @@ class VaultService {
       throw VaultException('Incorrect PIN.');
     }
     return Uint8List.fromList(masterKey);
+  }
+
+  Future<Uint8List> _unlockWithRecovery(
+    Map<String, dynamic> meta,
+    String recoveryCode,
+  ) async {
+    final recoveryKey = await ArcheCrypto.deriveVaultKey(
+      normalizeRecoveryCode(recoveryCode),
+      meta['recovery_salt'] as String,
+    );
+
+    String rawKeyB64;
+    try {
+      rawKeyB64 = await ArcheCrypto.decryptArc1(
+          meta['recovery_wrapped_key'] as String, recoveryKey);
+    } catch (_) {
+      throw VaultException('Recovery code could not unlock your vault.');
+    }
+
+    final masterKey = base64.decode(rawKeyB64);
+    final check =
+        await ArcheCrypto.decryptArc1(meta['key_check'] as String, masterKey);
+    if (check != _checkPlaintext) {
+      throw VaultException('Recovery code could not unlock your vault.');
+    }
+    return Uint8List.fromList(masterKey);
+  }
+
+  /// Re-wrap [masterKey] under a PIN-derived key with a fresh salt. When
+  /// [recoveryCode] is given, also wrap it under a recovery-derived key in the
+  /// same row. Columns not in the payload are preserved by the upsert.
+  Future<void> _persistPinWrapped(
+    String userId,
+    String pin,
+    Uint8List masterKey, {
+    String? recoveryCode,
+  }) async {
+    final pinSalt = ArcheCrypto.newSaltDescriptor();
+    final pinKey = await ArcheCrypto.deriveVaultKey(pin, pinSalt);
+    final rawB64 = base64.encode(masterKey);
+    final wrappedKey = await ArcheCrypto.encryptArc1(rawB64, pinKey);
+    final keyCheck = await ArcheCrypto.encryptArc1(_checkPlaintext, masterKey);
+
+    final payload = <String, dynamic>{
+      'user_id': userId,
+      'salt': pinSalt,
+      'key_check': keyCheck,
+      'wrapped_key': wrappedKey,
+      'vault_format': _vaultFormat,
+    };
+
+    if (recoveryCode != null) {
+      final recoverySalt = ArcheCrypto.newSaltDescriptor();
+      final recoveryKey = await ArcheCrypto.deriveVaultKey(
+        normalizeRecoveryCode(recoveryCode),
+        recoverySalt,
+      );
+      payload['recovery_salt'] = recoverySalt;
+      payload['recovery_wrapped_key'] =
+          await ArcheCrypto.encryptArc1(rawB64, recoveryKey);
+    }
+
+    await _client.from('user_encryption').upsert(payload);
   }
 }

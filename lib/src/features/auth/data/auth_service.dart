@@ -16,4 +16,36 @@ class AuthService {
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
+
+  /// Send a password reset email. The link opens the web app's reset page
+  /// (Supabase Site URL), where the user sets a new password, then signs in
+  /// again here.
+  Future<void> requestPasswordReset(String email) async {
+    await _client.auth.resetPasswordForEmail(email);
+  }
+
+  /// Send a 6-digit reauthentication code to the user's current email. Required
+  /// before changing the account email so we can prove it's really them.
+  Future<void> reauthenticate() async {
+    await _client.auth.reauthenticate();
+  }
+
+  /// Change the account email. [nonce] is the reauthentication code sent to the
+  /// current address; a confirmation link then goes to the new address and the
+  /// change takes effect once the user opens it.
+  Future<void> updateEmail(String email, String nonce) async {
+    await _client.auth.updateUser(UserAttributes(email: email, nonce: nonce));
+  }
+
+  /// Change the login password (separate from the vault PIN).
+  Future<void> updatePassword(String password) async {
+    await _client.auth.updateUser(UserAttributes(password: password));
+  }
+
+  /// Permanently delete the signed-in user's account via a database RPC, then
+  /// end the local session.
+  Future<void> deleteAccount() async {
+    await _client.rpc('delete_current_user');
+    await _client.auth.signOut(scope: SignOutScope.local);
+  }
 }
