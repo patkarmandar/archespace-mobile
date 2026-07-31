@@ -11,6 +11,7 @@ import 'package:archespace_mobile/src/features/settings/application/appearance_c
 import 'package:archespace_mobile/src/features/settings/presentation/account_security_screens.dart';
 import 'package:archespace_mobile/src/features/storage/presentation/storage_screen.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/features/vault/data/biometric_service.dart';
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -23,14 +24,34 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final AuthService _auth = AuthService();
   final SecureKeyStore _store = SecureKeyStore();
+  final BiometricService _biometric = BiometricService();
   bool _biometricEnabled = false;
+  bool _biometricAvailable = false;
 
   @override
   void initState() {
     super.initState();
-    _store.hasKey().then((has) {
-      if (mounted) setState(() => _biometricEnabled = has);
-    });
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final available = await _biometric.isAvailable();
+    final enabled = await _store.hasKey();
+    if (mounted) {
+      setState(() {
+        _biometricAvailable = available;
+        _biometricEnabled = enabled;
+      });
+    }
+  }
+
+  Future<void> _enableBiometric() async {
+    final ok = await _biometric.authenticate('Confirm to enable biometric unlock');
+    if (!ok) return;
+    await _store.saveMasterKey(VaultSession.instance.masterKey);
+    if (!mounted) return;
+    setState(() => _biometricEnabled = true);
+    _snack('Biometric unlock enabled.');
   }
 
   void _lock() {
@@ -201,6 +222,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('Disable biometric unlock'),
                 subtitle: const Text('Forget the saved key on this device'),
                 onTap: _disableBiometric,
+              )
+            else if (_biometricAvailable)
+              ListTile(
+                leading: const Icon(Icons.fingerprint),
+                title: const Text('Enable biometric unlock'),
+                subtitle: const Text('Unlock with fingerprint or face next time'),
+                onTap: _enableBiometric,
               ),
             const Divider(),
             ListTile(
