@@ -3,7 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:archespace_mobile/src/shared/config/build_info.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/backup/data/backup_repository.dart';
@@ -239,7 +243,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               onTap: _signOut,
             ),
+            const _BuildFooter(),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shows the app version and the source commit this build was compiled from.
+/// The commit hash links to GitHub so anyone can verify the running binary
+/// against the audited, open-source code.
+class _BuildFooter extends StatefulWidget {
+  const _BuildFooter();
+
+  @override
+  State<_BuildFooter> createState() => _BuildFooterState();
+}
+
+class _BuildFooterState extends State<_BuildFooter> {
+  TapGestureRecognizer? _tap;
+
+  @override
+  void initState() {
+    super.initState();
+    if (BuildInfo.isStamped) {
+      _tap = TapGestureRecognizer()..onTap = _openCommit;
+    }
+  }
+
+  @override
+  void dispose() {
+    _tap?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openCommit() async {
+    await launchUrl(
+      Uri.parse(BuildInfo.commitUrl),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final muted =
+        Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7);
+    final baseStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: muted);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 28, 16, 24),
+      child: Center(
+        child: Text.rich(
+          TextSpan(
+            style: baseStyle,
+            children: [
+              TextSpan(text: 'Arche Space v${BuildInfo.appVersion}  ·  build '),
+              TextSpan(
+                text: BuildInfo.buildHash,
+                style: baseStyle?.copyWith(
+                  fontFamily: 'monospace',
+                  decoration:
+                      BuildInfo.isStamped ? TextDecoration.underline : null,
+                  color: BuildInfo.isStamped
+                      ? Theme.of(context).colorScheme.primary
+                      : muted,
+                ),
+                recognizer: _tap,
+              ),
+            ],
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );

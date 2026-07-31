@@ -28,6 +28,8 @@ dependencies:
   printing: ^5.13.0
   # Save / open the JSON backup file.
   file_picker: ^8.1.0
+  # Open the build-commit link on GitHub from Settings.
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
