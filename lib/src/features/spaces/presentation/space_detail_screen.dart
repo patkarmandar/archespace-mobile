@@ -69,11 +69,13 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     try {
       final result = await ItemRepository(VaultSession.instance.masterKey)
           .listItems(widget.space.id);
-      if (mounted) setState(() {
-        _items = result.items;
-        _offline = result.fromCache;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _items = result.items;
+          _offline = result.fromCache;
+          _error = null;
+        });
+      }
       if (widget.focusItemId != null && !_focusHandled && mounted) {
         _focusHandled = true;
         WidgetsBinding.instance.addPostFrameCallback((_) => _revealFocus());
@@ -135,9 +137,9 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
         .then((prefs) => prefs.setString('sort_items', value));
   }
 
+  /// `newIndex` arrives already adjusted for the removed item (onReorderItem).
   void _onReorder(int oldIndex, int newIndex) {
     final list = List<SpaceItem>.of(_items ?? const []);
-    if (newIndex > oldIndex) newIndex -= 1;
     list.insert(newIndex, list.removeAt(oldIndex));
     setState(() => _items = list);
     _persistOrder(list);
@@ -516,7 +518,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
       padding: const EdgeInsets.only(top: 8, bottom: 88),
       buildDefaultDragHandles:
           !_selectMode && !_offline && _sort == kSortDefault,
-      onReorder: _onReorder,
+      onReorderItem: _onReorder,
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];

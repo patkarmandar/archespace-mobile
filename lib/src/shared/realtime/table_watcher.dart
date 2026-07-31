@@ -10,12 +10,11 @@ class TableWatcher {
   TableWatcher({
     required String channelName,
     required String table,
-    required void Function() onChange,
+    required this.onChange,
     String? filterColumn,
     String? filterValue,
-    Duration debounce = const Duration(milliseconds: 300),
-  })  : _onChange = onChange,
-        _debounce = debounce {
+    this.debounce = const Duration(milliseconds: 300),
+  }) {
     _channel = Supabase.instance.client
         .channel(channelName)
         .onPostgresChanges(
@@ -34,14 +33,14 @@ class TableWatcher {
         .subscribe();
   }
 
-  final void Function() _onChange;
-  final Duration _debounce;
+  final void Function() onChange;
+  final Duration debounce;
   late final RealtimeChannel _channel;
   Timer? _timer;
 
   void _schedule() {
     _timer?.cancel();
-    _timer = Timer(_debounce, _onChange);
+    _timer = Timer(debounce, onChange);
   }
 
   void dispose() {

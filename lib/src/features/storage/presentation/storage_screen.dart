@@ -35,10 +35,12 @@ class _StorageScreenState extends State<StorageScreen> {
     try {
       final entries =
           _isBin ? await _repo.loadDeleted() : await _repo.loadArchived();
-      if (mounted) setState(() {
-        _entries = entries;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _entries = entries;
+          _error = null;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }

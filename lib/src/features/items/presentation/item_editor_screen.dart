@@ -280,9 +280,9 @@ class _ListEditorState extends State<_ListEditor> {
     _controllers.remove(id)?.dispose();
   }
 
+  /// `newIndex` arrives already adjusted for the removed item (onReorderItem).
   void _reorder(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
       final item = _items.removeAt(oldIndex);
       _items.insert(newIndex, item);
     });
@@ -295,7 +295,7 @@ class _ListEditorState extends State<_ListEditor> {
         Expanded(
           child: ReorderableListView.builder(
             itemCount: _items.length,
-            onReorder: _reorder,
+            onReorderItem: _reorder,
             itemBuilder: (context, index) {
               final item = _items[index];
               return Padding(
@@ -421,9 +421,9 @@ class _CardsEditorState extends State<_CardsEditor> {
     _descCtrls.remove(id)?.dispose();
   }
 
+  /// `newIndex` arrives already adjusted for the removed item (onReorderItem).
   void _reorder(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) newIndex -= 1;
       final item = _items.removeAt(oldIndex);
       _items.insert(newIndex, item);
     });
@@ -436,7 +436,7 @@ class _CardsEditorState extends State<_CardsEditor> {
         Expanded(
           child: ReorderableListView.builder(
             itemCount: _items.length,
-            onReorder: _reorder,
+            onReorderItem: _reorder,
             itemBuilder: (context, index) {
               final item = _items[index];
               return Padding(

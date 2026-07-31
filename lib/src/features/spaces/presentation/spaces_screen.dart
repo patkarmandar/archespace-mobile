@@ -63,11 +63,13 @@ class _SpacesScreenState extends State<SpacesScreen> {
     try {
       final result =
           await SpaceRepository(VaultSession.instance.masterKey).listSpaces();
-      if (mounted) setState(() {
-        _spaces = result.spaces;
-        _offline = result.fromCache;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _spaces = result.spaces;
+          _offline = result.fromCache;
+          _error = null;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e);
     }
@@ -119,9 +121,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
   }
 
+  /// `newIndex` arrives already adjusted for the removed item (onReorderItem).
   void _onReorder(int oldIndex, int newIndex) {
     final list = List<Space>.of(_spaces ?? const []);
-    if (newIndex > oldIndex) newIndex -= 1;
     list.insert(newIndex, list.removeAt(oldIndex));
     setState(() => _spaces = list);
     _persistOrder(list);
@@ -405,7 +407,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
       padding: const EdgeInsets.only(top: 4, bottom: 88),
       buildDefaultDragHandles:
           !_selectMode && !_offline && _sort == kSortDefault,
-      onReorder: _onReorder,
+      onReorderItem: _onReorder,
       itemCount: spaces.length,
       itemBuilder: (context, index) {
         final space = spaces[index];
