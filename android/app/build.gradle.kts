@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "cc.archespace.archespace_mobile"
-    compileSdk = flutter.compileSdkVersion
+    // A plugin dependency (flutter_plugin_android_lifecycle, via file_picker)
+    // requires compileSdk 36; override Flutter's default (34).
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
