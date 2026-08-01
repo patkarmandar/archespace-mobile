@@ -40,9 +40,17 @@ class _VaultSetupScreenState extends State<VaultSetupScreen> {
     final userId = _auth.currentUser?.id;
     if (userId == null) return;
 
+    if (_pin.text.isEmpty) {
+      setState(() => _error = 'Enter a vault PIN.');
+      return;
+    }
     final pinError = validateVaultPin(_pin.text);
     if (pinError != null) {
       setState(() => _error = pinError);
+      return;
+    }
+    if (_confirm.text.isEmpty) {
+      setState(() => _error = 'Confirm your vault PIN.');
       return;
     }
     if (_pin.text != _confirm.text) {

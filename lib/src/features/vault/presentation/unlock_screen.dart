@@ -74,6 +74,11 @@ class _UnlockScreenState extends State<UnlockScreen> {
     final userId = _auth.currentUser?.id;
     if (userId == null) return;
 
+    if (_pin.text.trim().isEmpty) {
+      setState(() => _error = 'Enter your vault PIN.');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;

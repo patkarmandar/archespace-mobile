@@ -222,20 +222,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final navigator = Navigator.of(context);
     final email = _auth.currentUser?.email;
 
+    if (_current.text.isEmpty || email == null) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Enter your current password.')));
+      return;
+    }
+    if (_next.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Enter a new password.')));
+      return;
+    }
     final pwError = validatePassword(_next.text);
     if (pwError != null) {
       messenger.showSnackBar(
           SnackBar(content: Text(pwError.replaceFirst('Password', 'New password'))));
       return;
     }
+    if (_confirm.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Confirm your new password.')));
+      return;
+    }
     if (_next.text != _confirm.text) {
       messenger.showSnackBar(
           const SnackBar(content: Text('New passwords do not match.')));
-      return;
-    }
-    if (_current.text.isEmpty || email == null) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Enter your current password.')));
       return;
     }
 
@@ -368,9 +378,24 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
   Future<void> _changePin() async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    if (_current.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Enter your current vault PIN.')));
+      return;
+    }
+    if (_next.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Enter a new vault PIN.')));
+      return;
+    }
     final pinError = validateVaultPin(_next.text);
     if (pinError != null) {
       messenger.showSnackBar(SnackBar(content: Text(pinError)));
+      return;
+    }
+    if (_confirm.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Confirm your new vault PIN.')));
       return;
     }
     if (_next.text != _confirm.text) {
@@ -555,9 +580,24 @@ class _ResetPinScreenState extends State<ResetPinScreen> {
 
   Future<void> _reset() async {
     final messenger = ScaffoldMessenger.of(context);
+    if (_recoveryCode.text.trim().isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Enter your recovery code.')));
+      return;
+    }
+    if (_next.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Enter a new vault PIN.')));
+      return;
+    }
     final pinError = validateVaultPin(_next.text);
     if (pinError != null) {
       messenger.showSnackBar(SnackBar(content: Text(pinError)));
+      return;
+    }
+    if (_confirm.text.isEmpty) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Confirm your new vault PIN.')));
       return;
     }
     if (_next.text != _confirm.text) {
