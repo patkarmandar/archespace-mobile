@@ -171,7 +171,9 @@ class SpaceRepository {
       'name': await _enc(name),
       'description': await _enc(description),
       'color': color,
-      'tags': tags.isEmpty ? null : await _encTags(tags),
+      // `tags` is jsonb NOT NULL; always store an encrypted array (matching the
+      // web) rather than null, which would violate the constraint.
+      'tags': await _encTags(tags),
       'position': existing.length,
     });
   }
@@ -187,7 +189,8 @@ class SpaceRepository {
       'name': await _enc(name),
       'description': await _enc(description),
       'color': color,
-      'tags': tags.isEmpty ? null : await _encTags(tags),
+      // `tags` is jsonb NOT NULL; store an encrypted array, never null.
+      'tags': await _encTags(tags),
     }).eq('id', id);
   }
 

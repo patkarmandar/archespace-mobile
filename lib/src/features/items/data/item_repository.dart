@@ -80,14 +80,23 @@ class ItemRepository {
       ArcheCrypto.encryptArc1(jsonEncode(content), _masterKey);
 
   /// Re-encrypt and save an existing item's title + content. Queued offline.
+  ///
+  /// Goes through the write queue as an upsert, so the row must carry the
+  /// columns a fresh insert would need: `space_id` and `type` are NOT NULL with
+  /// no default (`user_id` is filled by a DB trigger from `space_id`). Without
+  /// them the upsert's insert path violates NOT NULL even when the row already
+  /// exists, which surfaced as a misleading "could not save" error.
   Future<void> updateItem({
     required String id,
     required String spaceId,
+    required String type,
     required String title,
     required Map<String, dynamic> content,
   }) async {
     final row = {
       'id': id,
+      'space_id': spaceId,
+      'type': type,
       'title': await _encTitle(title),
       'content': await _encContent(content),
     };
