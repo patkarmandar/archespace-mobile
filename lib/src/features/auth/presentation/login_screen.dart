@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/auth/domain/email.dart';
 import 'package:archespace_mobile/src/features/auth/domain/password_policy.dart';
 import 'package:archespace_mobile/src/shared/config/app_config.dart';
 
@@ -46,6 +47,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submit() async {
     if (_loading) return;
+    final emailError = validateEmail(_email.text.trim());
+    if (emailError != null) {
+      setState(() => _error = emailError);
+      return;
+    }
+    if (_password.text.isEmpty) {
+      setState(() => _error = 'Enter your password.');
+      return;
+    }
     if (_isSignUp) {
       await _createAccount();
     } else {

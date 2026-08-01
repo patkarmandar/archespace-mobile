@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/auth/domain/email.dart';
 import 'package:archespace_mobile/src/features/auth/domain/password_policy.dart';
 import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
 import 'package:archespace_mobile/src/features/vault/domain/vault_pin.dart';
@@ -53,9 +54,9 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final nextEmail = _newEmail.text.trim().toLowerCase();
     final current = _auth.currentUser?.email?.toLowerCase();
-    if (nextEmail.isEmpty) {
-      messenger.showSnackBar(
-          const SnackBar(content: Text('Enter a new email address.')));
+    final emailError = validateEmail(nextEmail);
+    if (emailError != null) {
+      messenger.showSnackBar(SnackBar(content: Text(emailError)));
       return;
     }
     if (nextEmail == current) {
