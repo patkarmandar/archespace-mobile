@@ -4,6 +4,7 @@ import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space_colors.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/shared/util/errors.dart';
 
 /// Create or edit a space (name, description, colour, tags). Pass [existing] to
 /// edit. Pops `true` on save so the caller can refresh.
@@ -76,12 +77,11 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
         );
       }
       if (mounted) Navigator.pop(context, true);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Could not save. Check your connection.')),
+          SnackBar(content: Text(saveErrorMessage(e))),
         );
       }
     }

@@ -9,6 +9,7 @@ import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
 import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
+import 'package:archespace_mobile/src/shared/util/errors.dart';
 
 /// Full-screen editor for one item. Pass [existing] to edit, or [type] (with no
 /// [existing]) to create. The per-type body editor mutates [_content] in place;
@@ -75,11 +76,11 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         );
       }
       if (mounted) Navigator.pop(context, true);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save. Check your connection.')),
+          SnackBar(content: Text(saveErrorMessage(e))),
         );
       }
     }

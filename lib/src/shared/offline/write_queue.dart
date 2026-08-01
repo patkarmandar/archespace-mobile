@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:archespace_mobile/src/shared/util/errors.dart';
+
 /// A durable queue of pending writes for offline support. Each entry is an
 /// idempotent **upsert** into a table (rows carry a client-generated id), so
 /// replaying is always safe. Only ciphertext is persisted.
@@ -48,16 +50,6 @@ class WriteQueue {
     pending.value = (await _read()).length;
   }
 
-  bool _isNetworkError(Object e) {
-    if (e is SocketException) return true;
-    final s = e.toString();
-    return s.contains('SocketException') ||
-        s.contains('Failed host lookup') ||
-        s.contains('Connection') ||
-        s.contains('ClientException') ||
-        s.contains('TimeoutException');
-  }
-
   /// Upsert [row] into [table]. Returns true if it was queued for later
   /// (offline), false if it committed online. Non-network errors are rethrown.
   Future<bool> upsert(String table, Map<String, dynamic> row) async {
@@ -65,7 +57,7 @@ class WriteQueue {
       await Supabase.instance.client.from(table).upsert(row);
       return false;
     } catch (e) {
-      if (!_isNetworkError(e)) rethrow;
+      if (!isNetworkError(e)) rethrow;
       final ops = await _read();
       ops.add({'table': table, 'row': row});
       await _writeAll(ops);
@@ -87,7 +79,7 @@ class WriteQueue {
               .from(op['table'] as String)
               .upsert(op['row'] as Map<String, dynamic>);
         } catch (e) {
-          if (_isNetworkError(e)) break; // try again next time
+          if (isNetworkError(e)) break; // try again next time
           // Permanent failure (e.g. row's parent gone): drop and continue.
         }
         ops = ops.sublist(1);
