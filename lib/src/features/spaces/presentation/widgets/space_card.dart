@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space_colors.dart';
 
-/// A space rendered as a content card (matching the web): a full colour-accent
-/// border, tag chips, pin indicator, name + chevron, and a footer with the item
-/// count and an edit/delete menu.
+/// A space rendered as a content card (matching the web): a subtle border that
+/// turns accent when pinned or selected, the space colour as a top border only,
+/// tag chips, pin indicator, name + chevron, and a footer with the item count
+/// and an edit/delete menu.
 class SpaceCard extends StatelessWidget {
   const SpaceCard({
     super.key,
@@ -40,10 +41,12 @@ class SpaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final border = selected
+    // The full border tracks pinned/selected (accent) or default (subtle); the
+    // space colour is shown only as a top border, matching the web.
+    final border = selected || space.pinned
         ? scheme.primary
-        : (spaceColor(space.color) ??
-            (space.pinned ? scheme.primary : scheme.outlineVariant));
+        : scheme.outlineVariant;
+    final topColor = spaceColor(space.color);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -57,6 +60,7 @@ class SpaceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (topColor != null) Container(height: 3, color: topColor),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
               child: Column(
