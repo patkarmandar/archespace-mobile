@@ -23,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   _Mode _mode = _Mode.signIn;
   bool _loading = false;
+  bool _resetLoading = false;
   bool _obscure = true;
   String? _error;
   String? _info;
@@ -60,6 +61,30 @@ class _LoginScreenState extends State<LoginScreen> {
       await _createAccount();
     } else {
       await _signIn();
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    if (_loading || _resetLoading) return;
+    final email = _email.text.trim();
+    final emailError = validateEmail(email);
+    if (emailError != null) {
+      setState(() => _error = emailError);
+      return;
+    }
+    setState(() {
+      _resetLoading = true;
+      _error = null;
+      _info = null;
+    });
+    try {
+      await _auth.requestPasswordReset(email);
+      setState(() => _info =
+          'Password reset link sent. Check your email to set a new password.');
+    } catch (_) {
+      setState(() => _error = 'Could not send the reset link. Check your connection.');
+    } finally {
+      if (mounted) setState(() => _resetLoading = false);
     }
   }
 
@@ -236,6 +261,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           : Text(_isSignUp ? 'Create account' : 'Sign in'),
                     ),
                   ),
+                  if (!_isSignUp) ...[
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed:
+                          (_loading || _resetLoading) ? null : _forgotPassword,
+                      child: _resetLoading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Forgot password?'),
+                    ),
+                  ],
                 ],
               ),
             ),
