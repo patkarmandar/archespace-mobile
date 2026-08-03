@@ -892,7 +892,11 @@ class _DrawEditorState extends State<_DrawEditor> {
                     onPointerUp: (e) => _end(),
                     child: CustomPaint(
                       painter: _DrawPainter(_strokes, _current),
-                      size: Size.infinite,
+                      // A concrete expanding child guarantees the canvas fills
+                      // the box and stays hit-testable; `size: Size.infinite`
+                      // with no child can collapse to zero under loose
+                      // constraints, leaving nothing to draw on.
+                      child: const SizedBox.expand(),
                     ),
                   ),
                 ),
@@ -924,18 +928,28 @@ class _DrawPainter extends CustomPainter {
       ..strokeWidth =
           ((stroke['size'] as num?)?.toDouble() ?? 8) * size.width / 1000;
 
-    final path = Path();
-    var started = false;
+    final offsets = <Offset>[];
     for (final p in points) {
       if (p is! List || p.length < 2) continue;
       final x = (p[0] as num).toDouble() / 1000 * size.width;
       final y = (p[1] as num).toDouble() / 600 * size.height;
-      if (!started) {
-        path.moveTo(x, y);
-        started = true;
-      } else {
-        path.lineTo(x, y);
-      }
+      offsets.add(Offset(x, y));
+    }
+    if (offsets.isEmpty) return;
+
+    // A single point (a tap) has no line to stroke, so render it as a dot.
+    if (offsets.length == 1) {
+      canvas.drawCircle(
+        offsets.first,
+        paint.strokeWidth / 2,
+        Paint()..color = paint.color,
+      );
+      return;
+    }
+
+    final path = Path()..moveTo(offsets.first.dx, offsets.first.dy);
+    for (final o in offsets.skip(1)) {
+      path.lineTo(o.dx, o.dy);
     }
     canvas.drawPath(path, paint);
   }
