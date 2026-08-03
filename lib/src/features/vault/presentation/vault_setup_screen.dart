@@ -5,6 +5,7 @@ import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
 import 'package:archespace_mobile/src/features/vault/domain/vault_pin.dart';
+import 'package:archespace_mobile/src/shared/widgets/confirm_dialog.dart';
 
 /// First-run vault creation for a freshly registered account (no vault yet).
 /// Creates a PIN-wrapped vault, shows the one-time recovery code, then unlocks
@@ -77,6 +78,17 @@ class _VaultSetupScreenState extends State<VaultSetupScreen> {
     }
   }
 
+  Future<void> _confirmSignOut() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Sign out?',
+      message: 'You will need your login password to sign back in.',
+      confirmLabel: 'Sign out',
+      destructive: true,
+    );
+    if (ok) await _auth.signOut();
+  }
+
   void _continue() {
     final key = _masterKey;
     if (key == null) return;
@@ -93,7 +105,7 @@ class _VaultSetupScreenState extends State<VaultSetupScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            onPressed: _auth.signOut,
+            onPressed: _confirmSignOut,
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
           ),

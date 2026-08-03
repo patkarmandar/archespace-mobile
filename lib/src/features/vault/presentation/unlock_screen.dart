@@ -5,6 +5,7 @@ import 'package:archespace_mobile/src/features/vault/data/biometric_service.dart
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
 import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/shared/widgets/confirm_dialog.dart';
 
 class UnlockScreen extends StatefulWidget {
   const UnlockScreen({super.key});
@@ -130,8 +131,28 @@ class _UnlockScreenState extends State<UnlockScreen> {
   }
 
   Future<void> _forgetBiometric() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Forget biometric unlock?',
+      message: 'The saved key on this device will be forgotten. You will need '
+          'your vault PIN to unlock next time.',
+      confirmLabel: 'Forget',
+      destructive: true,
+    );
+    if (!ok) return;
     await _store.clear();
     if (mounted) setState(() => _biometricEnabled = false);
+  }
+
+  Future<void> _confirmSignOut() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Sign out?',
+      message: 'You will need your login password and vault PIN to sign back in.',
+      confirmLabel: 'Sign out',
+      destructive: true,
+    );
+    if (ok) await _auth.signOut();
   }
 
   @override
@@ -141,7 +162,7 @@ class _UnlockScreenState extends State<UnlockScreen> {
         title: const Text('Unlock vault'),
         actions: [
           IconButton(
-            onPressed: _auth.signOut,
+            onPressed: _confirmSignOut,
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
           ),

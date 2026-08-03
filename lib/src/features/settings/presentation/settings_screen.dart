@@ -17,6 +17,7 @@ import 'package:archespace_mobile/src/features/storage/presentation/storage_scre
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/features/vault/data/biometric_service.dart';
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
+import 'package:archespace_mobile/src/shared/widgets/confirm_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,6 +65,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _disableBiometric() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Disable biometric unlock?',
+      message: 'The saved key on this device will be forgotten. You will need '
+          'your vault PIN to unlock next time.',
+      confirmLabel: 'Disable',
+      destructive: true,
+    );
+    if (!ok) return;
     await _store.clear();
     if (!mounted) return;
     setState(() => _biometricEnabled = false);
@@ -73,6 +83,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _signOut() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Sign out?',
+      message: 'You will need your login password and vault PIN to sign back in.',
+      confirmLabel: 'Sign out',
+      destructive: true,
+    );
+    if (!ok) return;
     await _auth.signOut();
     if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
   }

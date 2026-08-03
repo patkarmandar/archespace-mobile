@@ -14,6 +14,7 @@ import 'package:archespace_mobile/src/shared/export/pdf_exporter.dart';
 import 'package:archespace_mobile/src/shared/realtime/table_watcher.dart';
 import 'package:archespace_mobile/src/shared/sort/sort.dart';
 import 'package:archespace_mobile/src/shared/widgets/bulk_action_bar.dart';
+import 'package:archespace_mobile/src/shared/widgets/confirm_dialog.dart';
 import 'package:archespace_mobile/src/shared/widgets/offline_banner.dart';
 import 'package:archespace_mobile/src/shared/widgets/scrollable_message.dart';
 
@@ -316,6 +317,14 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   }
 
   Future<void> _deleteItem(SpaceItem item) async {
+    final name = item.title.isEmpty ? 'this item' : '"${item.title}"';
+    final ok = await confirmAction(
+      context,
+      title: 'Move item to bin?',
+      message: '$name will be moved to the recycle bin.',
+      confirmLabel: 'Move to bin',
+    );
+    if (!ok) return;
     try {
       await ItemRepository(VaultSession.instance.masterKey).deleteItem(item.id);
       if (mounted) {
