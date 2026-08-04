@@ -33,13 +33,8 @@ class SpaceCard extends StatelessWidget {
   final bool selected;
   final VoidCallback? onSelectToggle;
 
-  String get _countLabel {
-    final items =
-        '${space.itemCount} ${space.itemCount == 1 ? 'item' : 'items'}';
-    return space.pinnedCount > 0
-        ? '$items · ${space.pinnedCount} pinned'
-        : items;
-  }
+  String get _countLabel =>
+      '${space.itemCount} ${space.itemCount == 1 ? 'item' : 'items'}';
 
   @override
   Widget build(BuildContext context) {
