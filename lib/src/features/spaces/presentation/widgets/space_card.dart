@@ -229,11 +229,9 @@ class SpaceCard extends StatelessWidget {
   }
 }
 
-/// Fills the top edge and the two top corners of the card's rounded rectangle
-/// as a crescent that is [_thickness]px at the top and tapers to a point where
-/// it meets each side, so the space colour reads as a curved coloured top
-/// border that fades out smoothly (matching the web) rather than ending
-/// abruptly at full thickness.
+/// Fills the space colour as a curved top border: [_thickness]px across the top
+/// and around the upper part of each corner, then tapering to a gradual point
+/// as it curves down toward the sides (rather than ending in a straight cut).
 class _TopBorderPainter extends CustomPainter {
   _TopBorderPainter({required this.color, required this.radius});
 
@@ -248,27 +246,34 @@ class _TopBorderPainter extends CustomPainter {
     final r = radius;
     const t = _thickness;
     final ri = r - t;
+    const s45 = 0.70710678; // sin/cos 45° — band is full thickness here
+    const sTip = 0.92718385; // sin 68° — outer point where the band tapers out
+    const cTip = 0.37460659; // cos 68°
+    // Inner edge stays a concentric band down to the 45° diagonal; the outer
+    // edge continues a little further, and the two meet so each end narrows to a
+    // gradual point instead of a straight diagonal cut.
+    final iLeft = Offset(r - ri * s45, r - ri * s45);
+    final iRight = Offset(w - (r - ri * s45), r - ri * s45);
+    final tipLeft = Offset(r * (1 - sTip), r * (1 - cTip));
+    final tipRight = Offset(w - r * (1 - sTip), r * (1 - cTip));
+
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
-    // A uniform t-px band hugging the rounded top: outer edge follows the card's
-    // rounded top corners (left tangent → top → right tangent); the inner edge
-    // is a concentric arc t px inside, so the band stays an even thickness all
-    // the way around the corners and ends flush where the side border begins.
     final path = Path()
-      ..moveTo(0, r)
+      ..moveTo(tipLeft.dx, tipLeft.dy)
       ..arcToPoint(Offset(r, 0), radius: Radius.circular(r))
       ..lineTo(w - r, 0)
-      ..arcToPoint(Offset(w, r), radius: Radius.circular(r))
-      ..lineTo(w - t, r)
+      ..arcToPoint(tipRight, radius: Radius.circular(r))
+      ..lineTo(iRight.dx, iRight.dy)
       ..arcToPoint(
         Offset(w - r, t),
         radius: Radius.circular(ri),
         clockwise: false,
       )
       ..lineTo(r, t)
-      ..arcToPoint(Offset(t, r), radius: Radius.circular(ri), clockwise: false)
+      ..arcToPoint(iLeft, radius: Radius.circular(ri), clockwise: false)
       ..close();
     canvas.drawPath(path, paint);
   }
