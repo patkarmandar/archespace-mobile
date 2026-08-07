@@ -176,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   Text(
                     AppConfig.allowSignup
-                        ? 'Your private space - sign in or create an account'
+                        ? 'Sign in or create an account'
                         : 'Sign in to your account',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
