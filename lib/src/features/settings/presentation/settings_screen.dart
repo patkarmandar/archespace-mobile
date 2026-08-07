@@ -395,32 +395,36 @@ class _AppearanceSection extends StatelessWidget {
                 for (final option in kAccentOptions)
                   Padding(
                     padding: const EdgeInsets.only(right: 16),
-                    child: Semantics(
-                      button: true,
-                      selected: appearance.accentId == option.id,
-                      label: '${option.name} accent',
-                      child: GestureDetector(
-                        onTap: () => appearance.setAccent(option.id),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: option.color,
-                            border: Border.all(
-                              color: appearance.accentId == option.id
-                                  ? Theme.of(context).colorScheme.onSurface
-                                  : Colors.transparent,
-                              width: 3,
+                    child: Tooltip(
+                      message: option.description,
+                      excludeFromSemantics: true,
+                      child: Semantics(
+                        button: true,
+                        selected: appearance.accentId == option.id,
+                        label: '${option.name}. ${option.description}',
+                        child: GestureDetector(
+                          onTap: () => appearance.setAccent(option.id),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: option.color,
+                              border: Border.all(
+                                color: appearance.accentId == option.id
+                                    ? Theme.of(context).colorScheme.onSurface
+                                    : Colors.transparent,
+                                width: 3,
+                              ),
                             ),
+                            child: appearance.accentId == option.id
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 20,
+                                  )
+                                : null,
                           ),
-                          child: appearance.accentId == option.id
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 20,
-                                )
-                              : null,
                         ),
                       ),
                     ),

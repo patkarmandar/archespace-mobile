@@ -6,22 +6,35 @@ class AccentOption {
   const AccentOption({
     required this.id,
     required this.name,
+    required this.description,
     required this.color,
   });
 
   final String id;
   final String name;
+  final String description;
   final Color color;
 }
 
 const List<AccentOption> kAccentOptions = [
-  AccentOption(id: 'mint', name: 'Mint Green', color: Color(0xFF32D3AA)),
+  AccentOption(
+    id: 'mint',
+    name: 'Mint Green',
+    description: "Arche Space's signature accent, a refined mint green.",
+    color: Color(0xFF32D3AA),
+  ),
   AccentOption(
     id: 'lavender',
     name: 'Lavender Indigo',
+    description: 'A cool indigo-violet with a fresh, modern feel.',
     color: Color(0xFF7C6AF7),
   ),
-  AccentOption(id: 'amber', name: 'Amber Gold', color: Color(0xFFF6B84B)),
+  AccentOption(
+    id: 'amber',
+    name: 'Amber Gold',
+    description: 'A warm gold accent with a calm, focused feel.',
+    color: Color(0xFFF6B84B),
+  ),
 ];
 
 const String kDefaultAccentId = 'mint';
