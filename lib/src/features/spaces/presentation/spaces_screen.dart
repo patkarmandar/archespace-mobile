@@ -49,8 +49,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
 
   void _setSort(String value) {
     setState(() => _sort = value);
-    SharedPreferences.getInstance()
-        .then((prefs) => prefs.setString('sort_spaces', value));
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setString('sort_spaces', value),
+    );
   }
 
   @override
@@ -61,8 +62,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
 
   Future<void> _load() async {
     try {
-      final result =
-          await SpaceRepository(VaultSession.instance.masterKey).listSpaces();
+      final result = await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).listSpaces();
       if (mounted) {
         setState(() {
           _spaces = result.spaces;
@@ -76,21 +78,22 @@ class _SpacesScreenState extends State<SpacesScreen> {
   }
 
   Future<void> _createSpace() async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const SpaceEditorScreen()),
-    );
+    final saved = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const SpaceEditorScreen()));
     if (saved == true && mounted) _load();
   }
 
   Future<void> _togglePinSpace(Space space) async {
     try {
-      await SpaceRepository(VaultSession.instance.masterKey)
-          .setPinned(space.id, !space.pinned);
+      await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).setPinned(space.id, !space.pinned);
       if (mounted) _load();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not update the space.')),
+          const SnackBar(content: Text("Couldn't update the space.")),
         );
       }
     }
@@ -100,24 +103,25 @@ class _SpacesScreenState extends State<SpacesScreen> {
   void _enterSelect() => setState(() => _selectMode = true);
 
   void _exitSelect() => setState(() {
-        _selectMode = false;
-        _selected.clear();
-      });
+    _selectMode = false;
+    _selected.clear();
+  });
 
   void _toggleSelect(String id) => setState(() {
-        if (!_selected.remove(id)) _selected.add(id);
-      });
+    if (!_selected.remove(id)) _selected.add(id);
+  });
 
   void _selectAll() => setState(() {
-        _selected
-          ..clear()
-          ..addAll((_spaces ?? const <Space>[]).map((s) => s.id));
-      });
+    _selected
+      ..clear()
+      ..addAll((_spaces ?? const <Space>[]).map((s) => s.id));
+  });
 
   void _snack(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -131,10 +135,11 @@ class _SpacesScreenState extends State<SpacesScreen> {
 
   Future<void> _persistOrder(List<Space> list) async {
     try {
-      await SpaceRepository(VaultSession.instance.masterKey)
-          .reorder(list.map((s) => s.id).toList());
+      await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).reorder(list.map((s) => s.id).toList());
     } catch (_) {
-      _snack('Could not save the new order.');
+      _snack("Couldn't save the new order.");
       if (mounted) _load();
     }
   }
@@ -149,7 +154,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
         _load();
       }
     } catch (_) {
-      _snack('Bulk action failed.');
+      _snack("Couldn't complete that action.");
     }
   }
 
@@ -179,18 +184,19 @@ class _SpacesScreenState extends State<SpacesScreen> {
 
   Future<void> _duplicateSpace(Space space) async {
     try {
-      await SpaceRepository(VaultSession.instance.masterKey)
-          .duplicateSpace(space);
+      await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).duplicateSpace(space);
       if (mounted) {
         _load();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Space duplicated')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Space duplicated')));
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not duplicate the space.')),
+          const SnackBar(content: Text("Couldn't duplicate the space.")),
         );
       }
     }
@@ -198,18 +204,19 @@ class _SpacesScreenState extends State<SpacesScreen> {
 
   Future<void> _archiveSpace(Space space) async {
     try {
-      await SpaceRepository(VaultSession.instance.masterKey)
-          .archiveSpace(space.id);
+      await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).archiveSpace(space.id);
       if (mounted) {
         _load();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Space archived')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Space archived')));
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not archive the space.')),
+          const SnackBar(content: Text("Couldn't archive the space.")),
         );
       }
     }
@@ -228,7 +235,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Move space to bin?'),
-        content: Text('"$name" and its items will be moved to the recycle bin.'),
+        content: Text(
+          '"$name" and its items will be moved to the recycle bin.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -243,13 +252,14 @@ class _SpacesScreenState extends State<SpacesScreen> {
     );
     if (confirmed != true) return;
     try {
-      await SpaceRepository(VaultSession.instance.masterKey)
-          .deleteSpace(space.id);
+      await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).deleteSpace(space.id);
       if (mounted) _load();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not delete the space.')),
+          const SnackBar(content: Text("Couldn't delete the space.")),
         );
       }
     }
@@ -280,7 +290,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
               actions: [
                 IconButton(
                   onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SearchScreen(),
+                    ),
                   ),
                   icon: const Icon(Icons.search),
                   tooltip: 'Search',
@@ -299,7 +311,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SettingsScreen(),
+                    ),
                   ),
                   icon: const Icon(Icons.settings_outlined),
                   tooltip: 'Settings',
@@ -362,18 +376,20 @@ class _SpacesScreenState extends State<SpacesScreen> {
                         ? const SizedBox.shrink()
                         : Container(
                             width: double.infinity,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .tertiaryContainer,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.tertiaryContainer,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: Text(
                               '$count change${count == 1 ? '' : 's'} waiting to sync',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onTertiaryContainer,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onTertiaryContainer,
                               ),
                             ),
                           ),
@@ -393,7 +409,9 @@ class _SpacesScreenState extends State<SpacesScreen> {
     }
     final all = _spaces ?? const <Space>[];
     if (all.isEmpty) {
-      return const ScrollableMessage('No spaces yet.');
+      return const ScrollableMessage(
+        'No spaces yet.\nTap + to create your first space.',
+      );
     }
     final spaces = applySort(
       all,

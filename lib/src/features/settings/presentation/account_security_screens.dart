@@ -60,13 +60,17 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
       return;
     }
     if (nextEmail == current) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('New email must be different from your current one.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('New email must be different from your current one.'),
+        ),
+      );
       return;
     }
     if (_password.text.isEmpty) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Enter your login password to continue.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Enter your login password to continue.')),
+      );
       return;
     }
 
@@ -77,12 +81,18 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
       await _auth.reauthenticate();
       if (!mounted) return;
       setState(() => _codeStep = true);
-      messenger.showSnackBar(const SnackBar(
-          content: Text('We sent a 6-digit code to your current email.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('We sent a 6-digit code to your current email.'),
+        ),
+      );
     } on AuthException catch (e) {
       final invalid = e.message.toLowerCase().contains('invalid');
-      messenger.showSnackBar(SnackBar(
-          content: Text(invalid ? 'Login password is incorrect.' : e.message)));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(invalid ? 'Login password is incorrect.' : e.message),
+        ),
+      );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(_authMessage(e))));
     } finally {
@@ -96,7 +106,8 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
     final nextEmail = _newEmail.text.trim().toLowerCase();
     if (_code.text.trim().isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Enter the 6-digit code.')));
+        const SnackBar(content: Text('Enter the 6-digit code.')),
+      );
       return;
     }
 
@@ -104,10 +115,13 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
     try {
       await _auth.updateEmail(nextEmail, _code.text.trim());
       await _auth.signOut();
-      messenger.showSnackBar(const SnackBar(
-        content: Text(
-            'Confirmation link sent to your new email. Open it, then sign in again.'),
-      ));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Confirmation link sent to your new email. Open it, then sign in again.',
+          ),
+        ),
+      );
       navigator.popUntil((route) => route.isFirst);
     } catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -125,8 +139,10 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Current email: $currentEmail',
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              'Current email: $currentEmail',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               "We'll email a 6-digit code to your current address to confirm "
@@ -224,28 +240,35 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     if (_current.text.isEmpty || email == null) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Enter your current password.')));
+        const SnackBar(content: Text('Enter your current password.')),
+      );
       return;
     }
     if (_next.text.isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Enter a new password.')));
+        const SnackBar(content: Text('Enter a new password.')),
+      );
       return;
     }
     final pwError = validatePassword(_next.text);
     if (pwError != null) {
       messenger.showSnackBar(
-          SnackBar(content: Text(pwError.replaceFirst('Password', 'New password'))));
+        SnackBar(
+          content: Text(pwError.replaceFirst('Password', 'New password')),
+        ),
+      );
       return;
     }
     if (_confirm.text.isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Confirm your new password.')));
+        const SnackBar(content: Text('Confirm your new password.')),
+      );
       return;
     }
     if (_next.text != _confirm.text) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('New passwords do not match.')));
+        const SnackBar(content: Text('New passwords do not match.')),
+      );
       return;
     }
 
@@ -255,15 +278,22 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       await _auth.signIn(email: email, password: _current.text);
       await _auth.updatePassword(_next.text);
       await _auth.signOut();
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Login password updated. Sign in again with your new password.'),
-      ));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Login password updated. Sign in again with your new password.',
+          ),
+        ),
+      );
       navigator.popUntil((route) => route.isFirst);
     } on AuthException catch (e) {
       if (mounted) setState(() => _loading = false);
       final invalid = e.message.toLowerCase().contains('invalid');
-      messenger.showSnackBar(SnackBar(
-          content: Text(invalid ? 'Current password is incorrect.' : e.message)));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(invalid ? 'Current password is incorrect.' : e.message),
+        ),
+      );
     } catch (e) {
       if (mounted) setState(() => _loading = false);
       messenger.showSnackBar(SnackBar(content: Text(_authMessage(e))));
@@ -277,8 +307,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     setState(() => _resetLoading = true);
     try {
       await _auth.requestPasswordReset(email);
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Password reset link sent. Check your email.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Password reset link sent. Check your email.'),
+        ),
+      );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(_authMessage(e))));
     } finally {
@@ -295,8 +328,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Used to sign in. Separate from your vault PIN.',
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'Used to sign in. Separate from your vault PIN.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 20),
             _ObscureField(
               controller: _current,
@@ -336,7 +371,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ? const SizedBox(
                         height: 18,
                         width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2))
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Forgot current password? Send reset link'),
               ),
             ),
@@ -380,12 +416,14 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     final navigator = Navigator.of(context);
     if (_current.text.isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Enter your current vault PIN.')));
+        const SnackBar(content: Text('Enter your current vault PIN.')),
+      );
       return;
     }
     if (_next.text.isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Enter a new vault PIN.')));
+        const SnackBar(content: Text('Enter a new vault PIN.')),
+      );
       return;
     }
     final pinError = validateVaultPin(_next.text);
@@ -395,12 +433,14 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     }
     if (_confirm.text.isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Confirm your new vault PIN.')));
+        const SnackBar(content: Text('Confirm your new vault PIN.')),
+      );
       return;
     }
     if (_next.text != _confirm.text) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('New PINs do not match.')));
+        const SnackBar(content: Text('New PINs do not match.')),
+      );
       return;
     }
 
@@ -408,7 +448,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     try {
       await _vault.changePin(_requireUserId(_auth), _current.text, _next.text);
       messenger.showSnackBar(
-          const SnackBar(content: Text('Vault PIN updated.')));
+        const SnackBar(content: Text('Vault PIN updated.')),
+      );
       navigator.pop();
     } catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -498,11 +539,15 @@ class _SetupRecoveryScreenState extends State<SetupRecoveryScreen> {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _loading = true);
     try {
-      final code = await _vault.createRecoveryCode(_requireUserId(_auth), _pin.text);
+      final code = await _vault.createRecoveryCode(
+        _requireUserId(_auth),
+        _pin.text,
+      );
       setState(() => _code = code);
       _pin.clear();
       messenger.showSnackBar(
-          const SnackBar(content: Text('Recovery code created. Save it now.')));
+        const SnackBar(content: Text('Recovery code created. Save it now.')),
+      );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(_authMessage(e))));
     } finally {
@@ -582,12 +627,14 @@ class _ResetPinScreenState extends State<ResetPinScreen> {
     final messenger = ScaffoldMessenger.of(context);
     if (_recoveryCode.text.trim().isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Enter your recovery code.')));
+        const SnackBar(content: Text('Enter your recovery code.')),
+      );
       return;
     }
     if (_next.text.isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Enter a new vault PIN.')));
+        const SnackBar(content: Text('Enter a new vault PIN.')),
+      );
       return;
     }
     final pinError = validateVaultPin(_next.text);
@@ -597,12 +644,14 @@ class _ResetPinScreenState extends State<ResetPinScreen> {
     }
     if (_confirm.text.isEmpty) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('Confirm your new vault PIN.')));
+        const SnackBar(content: Text('Confirm your new vault PIN.')),
+      );
       return;
     }
     if (_next.text != _confirm.text) {
       messenger.showSnackBar(
-          const SnackBar(content: Text('New PINs do not match.')));
+        const SnackBar(content: Text('New PINs do not match.')),
+      );
       return;
     }
 
@@ -617,8 +666,11 @@ class _ResetPinScreenState extends State<ResetPinScreen> {
       _recoveryCode.clear();
       _next.clear();
       _confirm.clear();
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Vault PIN updated. Save your new recovery code.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Vault PIN updated. Save your new recovery code.'),
+        ),
+      );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(_authMessage(e))));
     } finally {
@@ -638,8 +690,10 @@ class _ResetPinScreenState extends State<ResetPinScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Use your recovery code to set a new vault PIN.',
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'Use your recovery code to set a new vault PIN.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: _recoveryCode,
@@ -723,12 +777,16 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
     if (_confirmText.text != _phrase) {
       messenger.showSnackBar(
-          SnackBar(content: Text('Type "$_phrase" to confirm.')));
+        SnackBar(content: Text('Type "$_phrase" to confirm.')),
+      );
       return;
     }
     if (_password.text.isEmpty || _pin.text.isEmpty || email == null) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Enter your login password and vault PIN.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Enter your login password and vault PIN.'),
+        ),
+      );
       return;
     }
 
@@ -739,13 +797,17 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       await _vault.unlock(_requireUserId(_auth), _pin.text);
       await _auth.deleteAccount();
       messenger.showSnackBar(
-          const SnackBar(content: Text('Your account has been deleted.')));
+        const SnackBar(content: Text('Your account has been deleted.')),
+      );
       navigator.popUntil((route) => route.isFirst);
     } on AuthException catch (e) {
       if (mounted) setState(() => _loading = false);
       final invalid = e.message.toLowerCase().contains('invalid');
-      messenger.showSnackBar(SnackBar(
-          content: Text(invalid ? 'Login password is incorrect.' : e.message)));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(invalid ? 'Login password is incorrect.' : e.message),
+        ),
+      );
     } catch (e) {
       if (mounted) setState(() => _loading = false);
       messenger.showSnackBar(SnackBar(content: Text(_authMessage(e))));
@@ -776,9 +838,13 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     children: [
                       Icon(Icons.warning_amber_rounded, color: danger),
                       const SizedBox(width: 8),
-                      Text('This action is permanent',
-                          style: TextStyle(
-                              color: danger, fontWeight: FontWeight.w600)),
+                      Text(
+                        'This action is permanent',
+                        style: TextStyle(
+                          color: danger,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -791,16 +857,20 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             ),
             const SizedBox(height: 20),
             Text.rich(
-              TextSpan(children: [
-                const TextSpan(text: 'Type '),
-                TextSpan(
+              TextSpan(
+                children: [
+                  const TextSpan(text: 'Type '),
+                  TextSpan(
                     text: _phrase,
                     style: TextStyle(
-                        color: danger,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w600)),
-                const TextSpan(text: ' and re-enter your credentials.'),
-              ]),
+                      color: danger,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const TextSpan(text: ' and re-enter your credentials.'),
+                ],
+              ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -823,11 +893,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               onToggle: () => setState(() => _obscure = !_obscure),
             ),
             const SizedBox(height: 12),
-            _PinField(
-              controller: _pin,
-              label: 'Vault PIN',
-              enabled: !_loading,
-            ),
+            _PinField(controller: _pin, label: 'Vault PIN', enabled: !_loading),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _loading ? null : _delete,
@@ -839,7 +905,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Delete account permanently'),
               ),
             ),
@@ -931,8 +1000,12 @@ class _WeakPinNote extends StatelessWidget {
         Icon(Icons.info_outline, size: 18, color: color),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color)),
+          child: Text(
+            message,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: color),
+          ),
         ),
       ],
     );
@@ -957,9 +1030,13 @@ class _RecoveryCodeCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('New one-time recovery code',
-              style: TextStyle(
-                  color: scheme.primary, fontWeight: FontWeight.w600)),
+          Text(
+            'New one-time recovery code',
+            style: TextStyle(
+              color: scheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -979,14 +1056,17 @@ class _RecoveryCodeCard extends StatelessWidget {
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: code));
                   ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Recovery code copied.')));
+                    const SnackBar(content: Text('Recovery code copied.')),
+                  );
                 },
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text('Save this code now. It replaces any previous recovery code.',
-              style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            'Save this code now. It replaces any previous recovery code.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );
@@ -1014,7 +1094,8 @@ class _SubmitButton extends StatelessWidget {
             ? const SizedBox(
                 height: 18,
                 width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2))
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             : Text(label),
       ),
     );

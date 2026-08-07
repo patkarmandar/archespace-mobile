@@ -63,7 +63,12 @@ class VaultService {
 
     final masterKey = ArcheCrypto.randomAesKey();
     final recoveryCode = generateRecoveryCode();
-    await _persistPinWrapped(userId, pin, masterKey, recoveryCode: recoveryCode);
+    await _persistPinWrapped(
+      userId,
+      pin,
+      masterKey,
+      recoveryCode: recoveryCode,
+    );
     return (masterKey: masterKey, recoveryCode: recoveryCode);
   }
 
@@ -107,15 +112,20 @@ class VaultService {
     final masterKey = await _unlockWithPin(meta, currentPin);
     final recoveryCode = generateRecoveryCode();
     final recoverySalt = ArcheCrypto.newSaltDescriptor();
-    final recoveryKey =
-        await ArcheCrypto.deriveVaultKey(recoveryCode, recoverySalt);
+    final recoveryKey = await ArcheCrypto.deriveVaultKey(
+      recoveryCode,
+      recoverySalt,
+    );
     final rawB64 = base64.encode(masterKey);
     final recoveryWrapped = await ArcheCrypto.encryptArc1(rawB64, recoveryKey);
 
-    await _client.from('user_encryption').update({
-      'recovery_salt': recoverySalt,
-      'recovery_wrapped_key': recoveryWrapped,
-    }).eq('user_id', userId);
+    await _client
+        .from('user_encryption')
+        .update({
+          'recovery_salt': recoverySalt,
+          'recovery_wrapped_key': recoveryWrapped,
+        })
+        .eq('user_id', userId);
 
     return recoveryCode;
   }
@@ -150,21 +160,31 @@ class VaultService {
     return nextCode;
   }
 
-  Future<Uint8List> _unlockWithPin(Map<String, dynamic> meta, String pin) async {
-    final pinKey = await ArcheCrypto.deriveVaultKey(pin, meta['salt'] as String);
+  Future<Uint8List> _unlockWithPin(
+    Map<String, dynamic> meta,
+    String pin,
+  ) async {
+    final pinKey = await ArcheCrypto.deriveVaultKey(
+      pin,
+      meta['salt'] as String,
+    );
 
     String rawKeyB64;
     try {
-      rawKeyB64 =
-          await ArcheCrypto.decryptArc1(meta['wrapped_key'] as String, pinKey);
+      rawKeyB64 = await ArcheCrypto.decryptArc1(
+        meta['wrapped_key'] as String,
+        pinKey,
+      );
     } catch (_) {
       // A wrong PIN makes GCM authentication fail before the key check.
       throw VaultException('Incorrect PIN.');
     }
 
     final masterKey = base64.decode(rawKeyB64);
-    final check =
-        await ArcheCrypto.decryptArc1(meta['key_check'] as String, masterKey);
+    final check = await ArcheCrypto.decryptArc1(
+      meta['key_check'] as String,
+      masterKey,
+    );
     if (check != _checkPlaintext) {
       throw VaultException('Incorrect PIN.');
     }
@@ -183,14 +203,18 @@ class VaultService {
     String rawKeyB64;
     try {
       rawKeyB64 = await ArcheCrypto.decryptArc1(
-          meta['recovery_wrapped_key'] as String, recoveryKey);
+        meta['recovery_wrapped_key'] as String,
+        recoveryKey,
+      );
     } catch (_) {
       throw VaultException('Recovery code could not unlock your vault.');
     }
 
     final masterKey = base64.decode(rawKeyB64);
-    final check =
-        await ArcheCrypto.decryptArc1(meta['key_check'] as String, masterKey);
+    final check = await ArcheCrypto.decryptArc1(
+      meta['key_check'] as String,
+      masterKey,
+    );
     if (check != _checkPlaintext) {
       throw VaultException('Recovery code could not unlock your vault.');
     }
@@ -227,8 +251,10 @@ class VaultService {
         recoverySalt,
       );
       payload['recovery_salt'] = recoverySalt;
-      payload['recovery_wrapped_key'] =
-          await ArcheCrypto.encryptArc1(rawB64, recoveryKey);
+      payload['recovery_wrapped_key'] = await ArcheCrypto.encryptArc1(
+        rawB64,
+        recoveryKey,
+      );
     }
 
     await _client.from('user_encryption').upsert(payload);

@@ -90,7 +90,9 @@ class _UnlockScreenState extends State<UnlockScreen> {
       // Offer to enable biometric unlock for next time, before we navigate away.
       if (_biometricAvailable && !_biometricEnabled && mounted) {
         if (await _askEnableBiometric()) {
-          if (await _biometric.authenticate('Confirm to enable biometric unlock')) {
+          if (await _biometric.authenticate(
+            'Confirm to enable biometric unlock',
+          )) {
             await _store.saveMasterKey(masterKey);
           }
         }
@@ -134,7 +136,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
     final ok = await confirmAction(
       context,
       title: 'Forget biometric unlock?',
-      message: 'The saved key on this device will be forgotten. You will need '
+      message:
+          'The saved key on this device will be forgotten. You will need '
           'your vault PIN to unlock next time.',
       confirmLabel: 'Forget',
       destructive: true,
@@ -148,7 +151,8 @@ class _UnlockScreenState extends State<UnlockScreen> {
     final ok = await confirmAction(
       context,
       title: 'Sign out?',
-      message: 'You will need your login password and vault PIN to sign back in.',
+      message:
+          'You will need your login password and vault PIN to sign back in.',
       confirmLabel: 'Sign out',
       destructive: true,
     );
@@ -209,7 +213,9 @@ class _UnlockScreenState extends State<UnlockScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 20),

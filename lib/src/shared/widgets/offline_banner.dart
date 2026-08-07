@@ -19,7 +19,10 @@ class OfflineBanner extends StatelessWidget {
           Expanded(
             child: Text(
               'Offline — showing saved data',
-              style: TextStyle(color: scheme.onSecondaryContainer, fontSize: 13),
+              style: TextStyle(
+                color: scheme.onSecondaryContainer,
+                fontSize: 13,
+              ),
             ),
           ),
         ],

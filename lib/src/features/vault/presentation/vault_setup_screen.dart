@@ -72,7 +72,9 @@ class _VaultSetupScreenState extends State<VaultSetupScreen> {
     } on VaultException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Could not create your vault. Check your connection.');
+      setState(
+        () => _error = "Couldn't create your vault. Check your connection.",
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -137,9 +139,11 @@ class _VaultSetupScreenState extends State<VaultSetupScreen> {
       children: [
         const Icon(Icons.shield_outlined, size: 48),
         const SizedBox(height: 16),
-        Text('Create your vault PIN',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          'Create your vault PIN',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 8),
         Text(
           'Choose a PIN or passphrase, at least $vaultPinMinLength characters. '
@@ -179,21 +183,29 @@ class _VaultSetupScreenState extends State<VaultSetupScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline,
-                  size: 18, color: Theme.of(context).colorScheme.tertiary),
+              Icon(
+                Icons.info_outline,
+                size: 18,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(warning,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.tertiary)),
+                child: Text(
+                  warning,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                ),
               ),
             ],
           ),
         ],
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text(_error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
         ],
         const SizedBox(height: 20),
         FilledButton(
@@ -204,7 +216,8 @@ class _VaultSetupScreenState extends State<VaultSetupScreen> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Create PIN'),
           ),
         ),
@@ -228,9 +241,11 @@ class _RecoveryCodeStep extends StatelessWidget {
       children: [
         const Icon(Icons.vpn_key_outlined, size: 48),
         const SizedBox(height: 16),
-        Text('Save your recovery code',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          'Save your recovery code',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 8),
         Text(
           'This code is shown once. Use it to reset your PIN if you forget it. '
@@ -264,7 +279,8 @@ class _RecoveryCodeStep extends StatelessWidget {
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: code));
                   ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Recovery code copied.')));
+                    const SnackBar(content: Text('Recovery code copied.')),
+                  );
                 },
               ),
             ],

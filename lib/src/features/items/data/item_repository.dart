@@ -21,7 +21,8 @@ class ItemRepository {
   /// Fetch a space's items, caching the encrypted rows; on a network error,
   /// fall back to the cache. `fromCache` is true when the fallback was used.
   Future<({List<SpaceItem> items, bool fromCache})> listItems(
-      String spaceId) async {
+    String spaceId,
+  ) async {
     final cacheKey = 'items_$spaceId';
     List<dynamic> rows;
     try {
@@ -49,15 +50,19 @@ class ItemRepository {
     final items = <SpaceItem>[];
     for (final row in rows) {
       final m = row as Map;
-      items.add(SpaceItem(
-        id: m['id'] as String,
-        type: (m['type'] ?? '') as String,
-        title: await ArcheCrypto.decryptArc1(
-            (m['title'] ?? '') as String, _masterKey),
-        content: await _decryptContent(m['content']),
-        pinned: (m['pinned'] ?? false) as bool,
-        createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
-      ));
+      items.add(
+        SpaceItem(
+          id: m['id'] as String,
+          type: (m['type'] ?? '') as String,
+          title: await ArcheCrypto.decryptArc1(
+            (m['title'] ?? '') as String,
+            _masterKey,
+          ),
+          content: await _decryptContent(m['content']),
+          pinned: (m['pinned'] ?? false) as bool,
+          createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
+        ),
+      );
     }
     return items;
   }
@@ -133,7 +138,9 @@ class ItemRepository {
   }
 
   Future<void> duplicateItem(String spaceId, SpaceItem item) async {
-    final title = item.title.isEmpty ? 'Untitled (copy)' : '${item.title} (copy)';
+    final title = item.title.isEmpty
+        ? 'Untitled (copy)'
+        : '${item.title} (copy)';
     await _client.from('space_items').insert({
       'space_id': spaceId,
       'type': item.type,
@@ -144,11 +151,14 @@ class ItemRepository {
   }
 
   Future<void> moveItem(String itemId, String targetSpaceId) async {
-    await _client.from('space_items').update({
-      'space_id': targetSpaceId,
-      'position': await _endPosition(targetSpaceId),
-      'pinned': false,
-    }).eq('id', itemId);
+    await _client
+        .from('space_items')
+        .update({
+          'space_id': targetSpaceId,
+          'position': await _endPosition(targetSpaceId),
+          'pinned': false,
+        })
+        .eq('id', itemId);
   }
 
   String _nowIso() => DateTime.now().toUtc().toIso8601String();
@@ -166,31 +176,37 @@ class ItemRepository {
     if (ids.isEmpty) return;
     await _client
         .from('space_items')
-        .update({'pinned': pinned}).inFilter('id', ids);
+        .update({'pinned': pinned})
+        .inFilter('id', ids);
   }
 
   Future<void> bulkArchive(List<String> ids) async {
     if (ids.isEmpty) return;
     await _client
         .from('space_items')
-        .update({'archived_at': _nowIso()}).inFilter('id', ids);
+        .update({'archived_at': _nowIso()})
+        .inFilter('id', ids);
   }
 
   Future<void> bulkDelete(List<String> ids) async {
     if (ids.isEmpty) return;
     await _client
         .from('space_items')
-        .update({'deleted_at': _nowIso()}).inFilter('id', ids);
+        .update({'deleted_at': _nowIso()})
+        .inFilter('id', ids);
   }
 
   Future<void> bulkMove(List<String> ids, String targetSpaceId) async {
     var position = await _endPosition(targetSpaceId);
     for (final id in ids) {
-      await _client.from('space_items').update({
-        'space_id': targetSpaceId,
-        'position': position,
-        'pinned': false,
-      }).eq('id', id);
+      await _client
+          .from('space_items')
+          .update({
+            'space_id': targetSpaceId,
+            'position': position,
+            'pinned': false,
+          })
+          .eq('id', id);
       position++;
     }
   }

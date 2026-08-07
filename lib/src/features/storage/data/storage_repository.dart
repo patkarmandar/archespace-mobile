@@ -44,8 +44,10 @@ class StorageRepository {
   }
 
   Future<List<StoredEntry>> loadDeleted() async {
-    final spaceRows =
-        await _client.from('spaces').select('id, name').not('deleted_at', 'is', null);
+    final spaceRows = await _client
+        .from('spaces')
+        .select('id, name')
+        .not('deleted_at', 'is', null);
     final itemRows = await _client
         .from('space_items')
         .select('id, title, type')
@@ -53,23 +55,36 @@ class StorageRepository {
     return _decode(spaceRows, itemRows);
   }
 
-  Future<List<StoredEntry>> _decode(List<dynamic> spaces, List<dynamic> items) async {
+  Future<List<StoredEntry>> _decode(
+    List<dynamic> spaces,
+    List<dynamic> items,
+  ) async {
     final entries = <StoredEntry>[];
     for (final r in spaces) {
-      entries.add(StoredEntry(
-        id: r['id'] as String,
-        label: await ArcheCrypto.decryptArc1((r['name'] ?? '') as String, _masterKey),
-        isSpace: true,
-        type: 'space',
-      ));
+      entries.add(
+        StoredEntry(
+          id: r['id'] as String,
+          label: await ArcheCrypto.decryptArc1(
+            (r['name'] ?? '') as String,
+            _masterKey,
+          ),
+          isSpace: true,
+          type: 'space',
+        ),
+      );
     }
     for (final r in items) {
-      entries.add(StoredEntry(
-        id: r['id'] as String,
-        label: await ArcheCrypto.decryptArc1((r['title'] ?? '') as String, _masterKey),
-        isSpace: false,
-        type: (r['type'] ?? '') as String,
-      ));
+      entries.add(
+        StoredEntry(
+          id: r['id'] as String,
+          label: await ArcheCrypto.decryptArc1(
+            (r['title'] ?? '') as String,
+            _masterKey,
+          ),
+          isSpace: false,
+          type: (r['type'] ?? '') as String,
+        ),
+      );
     }
     return entries;
   }
@@ -88,7 +103,8 @@ class StorageRepository {
   Future<void> moveToBin(StoredEntry e) async {
     await _client
         .from(_table(e))
-        .update({'deleted_at': _now(), 'archived_at': null}).eq('id', e.id);
+        .update({'deleted_at': _now(), 'archived_at': null})
+        .eq('id', e.id);
   }
 
   /// Permanently delete (hard delete). For spaces, the DB cascade removes items.

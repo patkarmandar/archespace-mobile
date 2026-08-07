@@ -44,7 +44,10 @@ class ArcheCrypto {
   /// Derive the 32-byte AES key from a vault secret using the KDF described by
   /// the self-describing [descriptor] (`argon2id$m$t$p$saltB64`, or a plain
   /// base64 salt for legacy PBKDF2).
-  static Future<Uint8List> deriveVaultKey(String secret, String descriptor) async {
+  static Future<Uint8List> deriveVaultKey(
+    String secret,
+    String descriptor,
+  ) async {
     if (descriptor.startsWith('argon2id\$')) {
       final parts = descriptor.split('\$'); // [argon2id, m, t, p, saltB64]
       final algorithm = Argon2id(
@@ -95,7 +98,10 @@ class ArcheCrypto {
   }
 
   /// Encrypt a string into an `arc1:` value (fresh random 12-byte IV).
-  static Future<String> encryptArc1(String plaintext, List<int> keyBytes) async {
+  static Future<String> encryptArc1(
+    String plaintext,
+    List<int> keyBytes,
+  ) async {
     final box = await _aes.encrypt(
       utf8.encode(plaintext),
       secretKey: SecretKey(keyBytes),

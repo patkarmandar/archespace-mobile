@@ -7,13 +7,17 @@ class AppConfig {
   const AppConfig._();
 
   static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+  );
 
   /// Whether to show the "Create account" option. Mirrors the web
   /// `MULTI_USER_ENABLED` flag; sign-up must also be enabled in Supabase Auth.
   /// Defaults to on; pass `--dart-define=ALLOW_SIGNUP=false` to hide it.
-  static const bool allowSignup =
-      bool.fromEnvironment('ALLOW_SIGNUP', defaultValue: true);
+  static const bool allowSignup = bool.fromEnvironment(
+    'ALLOW_SIGNUP',
+    defaultValue: true,
+  );
 
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

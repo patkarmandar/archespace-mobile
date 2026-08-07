@@ -49,7 +49,9 @@ class ItemCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       color: accent
           ? Color.alphaBlend(
-              scheme.primary.withValues(alpha: 0.05), scheme.surface)
+              scheme.primary.withValues(alpha: 0.05),
+              scheme.surface,
+            )
           : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -63,123 +65,142 @@ class ItemCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Row(
-              children: [
-                if (selectMode)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Icon(
-                      selected ? Icons.check_circle : Icons.circle_outlined,
-                      size: 20,
-                      color: selected ? scheme.primary : scheme.outline,
-                    ),
-                  ),
-                if (item.pinned)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Icon(Icons.push_pin, size: 16, color: scheme.primary),
-                  ),
-                if (itemTypeDef(item.type) != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: scheme.primary.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Text(
-                        itemTypeDef(item.type)!.label,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: scheme.primary,
-                        ),
+              Row(
+                children: [
+                  if (selectMode)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        selected ? Icons.check_circle : Icons.circle_outlined,
+                        size: 20,
+                        color: selected ? scheme.primary : scheme.outline,
                       ),
                     ),
-                  ),
-                Expanded(
-                  child: Text(
-                    item.title.isEmpty ? 'Untitled' : item.title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (!selectMode && isCopyableType(item.type))
-                  SizedBox(
-                    height: 32,
-                    width: 32,
-                    child: IconButton(
-                      icon: const Icon(Icons.content_copy, size: 16),
-                      padding: EdgeInsets.zero,
-                      tooltip: 'Copy',
-                      onPressed: () async {
-                        await Clipboard.setData(
-                            ClipboardData(text: itemClipboardText(item)));
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Copied to clipboard')),
-                          );
-                        }
-                      },
+                  if (item.pinned)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Icon(
+                        Icons.push_pin,
+                        size: 16,
+                        color: scheme.primary,
+                      ),
                     ),
-                  ),
-                if (!selectMode &&
-                    (onTogglePin != null ||
-                        onDuplicate != null ||
-                        onMove != null ||
-                        onArchive != null ||
-                        onExport != null ||
-                        onDelete != null))
-                  SizedBox(
-                    height: 32,
-                    width: 32,
-                    child: PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, size: 18),
-                      padding: EdgeInsets.zero,
-                      tooltip: 'Item actions',
-                      onSelected: (value) {
-                        if (value == 'pin') onTogglePin?.call();
-                        if (value == 'duplicate') onDuplicate?.call();
-                        if (value == 'move') onMove?.call();
-                        if (value == 'export') onExport?.call();
-                        if (value == 'archive') onArchive?.call();
-                        if (value == 'delete') onDelete?.call();
-                      },
-                      itemBuilder: (context) => [
-                        if (onTogglePin != null)
-                          PopupMenuItem(
-                            value: 'pin',
-                            child: Text(item.pinned ? 'Unpin' : 'Pin'),
+                  if (itemTypeDef(item.type) != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.primary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: scheme.primary.withValues(alpha: 0.25),
                           ),
-                        if (onDuplicate != null)
-                          const PopupMenuItem(
-                              value: 'duplicate', child: Text('Duplicate')),
-                        if (onMove != null)
-                          const PopupMenuItem(
-                              value: 'move', child: Text('Move to space')),
-                        if (onExport != null)
-                          const PopupMenuItem(
-                              value: 'export', child: Text('Export PDF')),
-                        if (onArchive != null)
-                          const PopupMenuItem(
-                              value: 'archive', child: Text('Archive')),
-                        if (onDelete != null)
-                          const PopupMenuItem(
-                              value: 'delete', child: Text('Delete')),
-                      ],
+                        ),
+                        child: Text(
+                          itemTypeDef(item.type)!.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: scheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  Expanded(
+                    child: Text(
+                      item.title.isEmpty ? 'Untitled' : item.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Divider(height: 1, color: scheme.outlineVariant),
-            const SizedBox(height: 10),
-            _ItemBody(item: item),
+                  if (!selectMode && isCopyableType(item.type))
+                    SizedBox(
+                      height: 32,
+                      width: 32,
+                      child: IconButton(
+                        icon: const Icon(Icons.content_copy, size: 16),
+                        padding: EdgeInsets.zero,
+                        tooltip: 'Copy',
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: itemClipboardText(item)),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Copied to clipboard'),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  if (!selectMode &&
+                      (onTogglePin != null ||
+                          onDuplicate != null ||
+                          onMove != null ||
+                          onArchive != null ||
+                          onExport != null ||
+                          onDelete != null))
+                    SizedBox(
+                      height: 32,
+                      width: 32,
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, size: 18),
+                        padding: EdgeInsets.zero,
+                        tooltip: 'Item actions',
+                        onSelected: (value) {
+                          if (value == 'pin') onTogglePin?.call();
+                          if (value == 'duplicate') onDuplicate?.call();
+                          if (value == 'move') onMove?.call();
+                          if (value == 'export') onExport?.call();
+                          if (value == 'archive') onArchive?.call();
+                          if (value == 'delete') onDelete?.call();
+                        },
+                        itemBuilder: (context) => [
+                          if (onTogglePin != null)
+                            PopupMenuItem(
+                              value: 'pin',
+                              child: Text(item.pinned ? 'Unpin' : 'Pin'),
+                            ),
+                          if (onDuplicate != null)
+                            const PopupMenuItem(
+                              value: 'duplicate',
+                              child: Text('Duplicate'),
+                            ),
+                          if (onMove != null)
+                            const PopupMenuItem(
+                              value: 'move',
+                              child: Text('Move to space'),
+                            ),
+                          if (onExport != null)
+                            const PopupMenuItem(
+                              value: 'export',
+                              child: Text('Export PDF'),
+                            ),
+                          if (onArchive != null)
+                            const PopupMenuItem(
+                              value: 'archive',
+                              child: Text('Archive'),
+                            ),
+                          if (onDelete != null)
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Divider(height: 1, color: scheme.outlineVariant),
+              const SizedBox(height: 10),
+              _ItemBody(item: item),
             ],
           ),
         ),
@@ -248,10 +269,7 @@ class _ListView extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 26,
-                  child: Text(ordered ? '${i + 1}.' : '•'),
-                ),
+                SizedBox(width: 26, child: Text(ordered ? '${i + 1}.' : '•')),
                 Expanded(child: Text(items[i])),
               ],
             ),
@@ -291,7 +309,8 @@ class _Checklist extends StatelessWidget {
                       (raw['text'] ?? '').toString(),
                       style: (raw['checked'] ?? false) == true
                           ? const TextStyle(
-                              decoration: TextDecoration.lineThrough)
+                              decoration: TextDecoration.lineThrough,
+                            )
                           : null,
                     ),
                   ),
@@ -445,7 +464,8 @@ class _StrokePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = ((s['size'] as num?)?.toDouble() ?? 8) * size.width / _vw;
+        ..strokeWidth =
+            ((s['size'] as num?)?.toDouble() ?? 8) * size.width / _vw;
 
       final path = Path();
       var started = false;
@@ -498,9 +518,11 @@ List<String> _columns(Map<String, dynamic> c) =>
 
 List<List<String>> _rows(Map<String, dynamic> c) =>
     ((c['rows'] as List?) ?? const [])
-        .map((r) => ((r as List?) ?? const [])
-            .map((e) => (e ?? '').toString())
-            .toList())
+        .map(
+          (r) => ((r as List?) ?? const [])
+              .map((e) => (e ?? '').toString())
+              .toList(),
+        )
         .toList();
 
 Color _parseColor(Object? hex, Color fallback) {

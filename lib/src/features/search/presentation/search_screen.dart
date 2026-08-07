@@ -33,8 +33,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _load() async {
     try {
-      final hits =
-          await SearchRepository(VaultSession.instance.masterKey).loadIndex();
+      final hits = await SearchRepository(
+        VaultSession.instance.masterKey,
+      ).loadIndex();
       if (mounted) setState(() => _all = hits);
     } catch (e) {
       if (mounted) setState(() => _error = e);
@@ -84,7 +85,10 @@ class _SearchScreenState extends State<SearchScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('Search unavailable:\n$_error', textAlign: TextAlign.center),
+          child: Text(
+            'Search unavailable:\n$_error',
+            textAlign: TextAlign.center,
+          ),
         ),
       );
     }
@@ -96,7 +100,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final spaces = matches.where((h) => h.isSpace).toList();
     final items = matches.where((h) => !h.isSpace).toList();
     if (matches.isEmpty) {
-      return const Center(child: Text('No matches.'));
+      return const Center(child: Text('No results found.'));
     }
     return ListView(
       children: [
@@ -112,7 +116,9 @@ class _SearchScreenState extends State<SearchScreen> {
           ListTile(
             leading: Icon(itemTypeDef(hit.type)?.icon ?? Icons.notes),
             title: Text(hit.title.isEmpty ? 'Untitled' : hit.title),
-            subtitle: hit.spaceName.isEmpty ? null : Text('in ${hit.spaceName}'),
+            subtitle: hit.spaceName.isEmpty
+                ? null
+                : Text('in ${hit.spaceName}'),
             onTap: () => _open(hit),
           ),
       ],

@@ -3,7 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// A selectable accent colour, matching the web app's options.
 class AccentOption {
-  const AccentOption({required this.id, required this.name, required this.color});
+  const AccentOption({
+    required this.id,
+    required this.name,
+    required this.color,
+  });
 
   final String id;
   final String name;
@@ -12,7 +16,11 @@ class AccentOption {
 
 const List<AccentOption> kAccentOptions = [
   AccentOption(id: 'mint', name: 'Mint Green', color: Color(0xFF32D3AA)),
-  AccentOption(id: 'lavender', name: 'Lavender Indigo', color: Color(0xFF7C6AF7)),
+  AccentOption(
+    id: 'lavender',
+    name: 'Lavender Indigo',
+    color: Color(0xFF7C6AF7),
+  ),
   AccentOption(id: 'amber', name: 'Amber Gold', color: Color(0xFFF6B84B)),
 ];
 

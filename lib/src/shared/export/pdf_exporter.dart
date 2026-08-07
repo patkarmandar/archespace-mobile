@@ -9,13 +9,16 @@ import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 class PdfExporter {
   const PdfExporter._();
 
-  static Future<Uint8List> buildSpace(String name, List<SpaceItem> items) async {
+  static Future<Uint8List> buildSpace(
+    String name,
+    List<SpaceItem> items,
+  ) async {
     final doc = pw.Document();
     doc.addPage(
       pw.MultiPage(
         build: (context) => [
           pw.Header(level: 0, text: name.isEmpty ? 'Space' : name),
-          if (items.isEmpty) pw.Text('No items.'),
+          if (items.isEmpty) pw.Text('This space has no items.'),
           for (final item in items) _section(item),
         ],
       ),
@@ -120,8 +123,10 @@ class PdfExporter {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 if ((it['title'] ?? '').toString().isNotEmpty)
-                  pw.Text((it['title']).toString(),
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                    (it['title']).toString(),
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  ),
                 if ((it['description'] ?? '').toString().isNotEmpty)
                   pw.Text((it['description']).toString()),
               ],
@@ -132,11 +137,15 @@ class PdfExporter {
   }
 
   static pw.Widget _table(Map<String, dynamic> c) {
-    final columns =
-        (c['columns'] as List? ?? const []).map((e) => (e ?? '').toString()).toList();
+    final columns = (c['columns'] as List? ?? const [])
+        .map((e) => (e ?? '').toString())
+        .toList();
     final rows = (c['rows'] as List? ?? const [])
-        .map((r) =>
-            r is List ? r.map((e) => (e ?? '').toString()).toList() : <String>[])
+        .map(
+          (r) => r is List
+              ? r.map((e) => (e ?? '').toString()).toList()
+              : <String>[],
+        )
         .toList();
     if (columns.isEmpty && rows.isEmpty) return pw.Text('(empty)');
     return pw.TableHelper.fromTextArray(
@@ -157,8 +166,9 @@ class PdfExporter {
 
   static String _drawSvg(List<dynamic> strokes) {
     final buffer = StringBuffer(
-        '<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">'
-        '<rect width="1000" height="600" fill="white"/>');
+      '<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">'
+      '<rect width="1000" height="600" fill="white"/>',
+    );
     for (final s in strokes) {
       if (s is! Map) continue;
       final pts = s['points'] as List? ?? const [];
@@ -174,8 +184,10 @@ class PdfExporter {
         d.write(started ? ' L $x $y' : 'M $x $y');
         started = true;
       }
-      buffer.write('<path d="$d" stroke="$color" stroke-width="$size" '
-          'fill="none" stroke-linecap="round" stroke-linejoin="round"/>');
+      buffer.write(
+        '<path d="$d" stroke="$color" stroke-width="$size" '
+        'fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      );
     }
     buffer.write('</svg>');
     return buffer.toString();

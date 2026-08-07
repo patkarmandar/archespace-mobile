@@ -115,21 +115,26 @@ class BackupRepository {
       final name = (rawName is String && rawName.trim().isNotEmpty)
           ? rawName.trim()
           : 'Imported Space';
-      final description =
-          raw['description'] is String ? (raw['description'] as String).trim() : '';
+      final description = raw['description'] is String
+          ? (raw['description'] as String).trim()
+          : '';
       final color = raw['color'] is String ? raw['color'] as String : null;
       final tags = raw['tags'] is List
           ? (raw['tags'] as List).map((e) => e.toString()).toList()
           : <String>[];
 
-      final created = await _client.from('spaces').insert({
-        'user_id': userId,
-        'name': await _enc(name),
-        'description': await _enc(description),
-        'color': color,
-        'tags': tags.isEmpty ? null : await _encJson(tags),
-        'position': spacePos++,
-      }).select('id').single();
+      final created = await _client
+          .from('spaces')
+          .insert({
+            'user_id': userId,
+            'name': await _enc(name),
+            'description': await _enc(description),
+            'color': color,
+            'tags': tags.isEmpty ? null : await _encJson(tags),
+            'position': spacePos++,
+          })
+          .select('id')
+          .single();
       final spaceId = created['id'] as String;
 
       final items = raw['items'];
@@ -142,7 +147,9 @@ class BackupRepository {
         if (type is! String || !knownTypes.contains(type)) continue;
         final content = it['content'];
         if (content is! Map) continue;
-        final title = it['title'] is String ? (it['title'] as String).trim() : '';
+        final title = it['title'] is String
+            ? (it['title'] as String).trim()
+            : '';
         rows.add({
           'space_id': spaceId,
           'type': type,

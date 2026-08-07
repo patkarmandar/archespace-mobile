@@ -6,8 +6,9 @@
 /// rejected before the request reaches Supabase.
 library;
 
-final RegExp _emailPattern =
-    RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+final RegExp _emailPattern = RegExp(
+  r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+);
 
 /// Returns an error message, or null when [email] looks like a valid address.
 /// Trim before calling.

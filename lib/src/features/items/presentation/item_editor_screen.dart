@@ -32,8 +32,9 @@ class ItemEditorScreen extends StatefulWidget {
 }
 
 class _ItemEditorScreenState extends State<ItemEditorScreen> {
-  late final TextEditingController _title =
-      TextEditingController(text: widget.existing?.title ?? '');
+  late final TextEditingController _title = TextEditingController(
+    text: widget.existing?.title ?? '',
+  );
   late final Map<String, dynamic> _content = _initialContent();
 
   bool _saving = false;
@@ -79,9 +80,9 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(saveErrorMessage(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(saveErrorMessage(e))));
       }
     }
   }
@@ -156,9 +157,7 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
           onRegisterFinalize: (fn) => _finalizeContent = fn,
         );
       default:
-        return Center(
-          child: Text('Editing ${widget.type} is not available yet.'),
-        );
+        return Center(child: Text("You can't edit this item type yet."));
     }
   }
 }
@@ -174,8 +173,9 @@ class _NoteEditor extends StatefulWidget {
 }
 
 class _NoteEditorState extends State<_NoteEditor> {
-  late final TextEditingController _text =
-      TextEditingController(text: (widget.content['text'] ?? '').toString());
+  late final TextEditingController _text = TextEditingController(
+    text: (widget.content['text'] ?? '').toString(),
+  );
 
   @override
   void dispose() {
@@ -248,11 +248,13 @@ class _ListEditorState extends State<_ListEditor> {
   }
 
   void _add() {
-    setState(() => _items.add({
-          'id': _uid(),
-          'text': '',
-          if (widget.variant == _ListVariant.checklist) 'checked': false,
-        }));
+    setState(
+      () => _items.add({
+        'id': _uid(),
+        'text': '',
+        if (widget.variant == _ListVariant.checklist) 'checked': false,
+      }),
+    );
   }
 
   Widget _leading(int index, Map<String, dynamic> item) {
@@ -312,10 +314,12 @@ class _ListEditorState extends State<_ListEditor> {
                         onChanged: (value) => item['text'] = value,
                         minLines: 1,
                         maxLines: null,
-                        style: widget.variant == _ListVariant.checklist &&
+                        style:
+                            widget.variant == _ListVariant.checklist &&
                                 (item['checked'] ?? false) == true
                             ? const TextStyle(
-                                decoration: TextDecoration.lineThrough)
+                                decoration: TextDecoration.lineThrough,
+                              )
                             : null,
                         decoration: const InputDecoration(
                           hintText: 'Item…',
@@ -412,8 +416,7 @@ class _CardsEditorState extends State<_CardsEditor> {
       );
 
   void _add() {
-    setState(() =>
-        _items.add({'id': _uid(), 'title': '', 'description': ''}));
+    setState(() => _items.add({'id': _uid(), 'title': '', 'description': ''}));
   }
 
   void _remove(int index) {
@@ -460,7 +463,8 @@ class _CardsEditorState extends State<_CardsEditor> {
                               controller: _titleFor(item),
                               onChanged: (value) => item['title'] = value,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w600),
+                                fontWeight: FontWeight.w600,
+                              ),
                               decoration: const InputDecoration(
                                 hintText: 'Title',
                                 border: InputBorder.none,
@@ -543,9 +547,11 @@ class _TableEditorState extends State<_TableEditor> {
       _columns.addAll(['', '']);
     }
     _rows = (((widget.content['rows'] as List?) ?? const []))
-        .map((r) => (((r as List?) ?? const []))
-            .map((e) => (e ?? '').toString())
-            .toList())
+        .map(
+          (r) => (((r as List?) ?? const []))
+              .map((e) => (e ?? '').toString())
+              .toList(),
+        )
         .toList();
     // Keep every row the width of the header.
     for (final row in _rows) {
@@ -647,9 +653,9 @@ class _TableEditorState extends State<_TableEditor> {
                           width: _kCellWidth,
                           decoration: BoxDecoration(
                             border: border,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                           ),
                           padding: const EdgeInsets.only(left: 8),
                           child: Row(
@@ -659,7 +665,8 @@ class _TableEditorState extends State<_TableEditor> {
                                   controller: _colCtrls[c],
                                   onChanged: (v) => _columns[c] = v,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w600),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                   decoration: InputDecoration(
                                     hintText: 'Column ${c + 1}',
                                     border: InputBorder.none,
@@ -702,13 +709,16 @@ class _TableEditorState extends State<_TableEditor> {
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 10),
+                                  horizontal: 8,
+                                  vertical: 10,
+                                ),
                               ),
                             ),
                           ),
                         IconButton(
-                          onPressed:
-                              _rows.length > 1 ? () => _removeRow(r) : null,
+                          onPressed: _rows.length > 1
+                              ? () => _removeRow(r)
+                              : null,
                           icon: const Icon(Icons.close, size: 16),
                           tooltip: 'Remove row',
                         ),
@@ -765,7 +775,9 @@ class _DrawEditorState extends State<_DrawEditor> {
   @override
   void initState() {
     super.initState();
-    _strokes = List<dynamic>.from((widget.content['strokes'] as List?) ?? const []);
+    _strokes = List<dynamic>.from(
+      (widget.content['strokes'] as List?) ?? const [],
+    );
     widget.content['strokes'] = _strokes;
   }
 
@@ -776,11 +788,13 @@ class _DrawEditorState extends State<_DrawEditor> {
   }
 
   void _start(Offset p, double pressure) {
-    setState(() => _current = {
-          'points': [_toLogical(p, pressure)],
-          'color': _color,
-          'size': _size,
-        });
+    setState(
+      () => _current = {
+        'points': [_toLogical(p, pressure)],
+        'color': _color,
+        'size': _size,
+      },
+    );
   }
 
   void _extend(Offset p, double pressure) {
@@ -843,7 +857,9 @@ class _DrawEditorState extends State<_DrawEditor> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _size == s ? accent : Theme.of(context).dividerColor,
+                      color: _size == s
+                          ? accent
+                          : Theme.of(context).dividerColor,
                     ),
                   ),
                   child: Container(
@@ -878,29 +894,31 @@ class _DrawEditorState extends State<_DrawEditor> {
                 builder: (context, constraints) {
                   _canvas = Size(constraints.maxWidth, constraints.maxHeight);
                   return DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Listener(
-                    behavior: HitTestBehavior.opaque,
-                    onPointerDown: (e) => _start(e.localPosition, e.pressure),
-                    onPointerMove: (e) => _extend(e.localPosition, e.pressure),
-                    onPointerUp: (e) => _end(),
-                    child: CustomPaint(
-                      painter: _DrawPainter(_strokes, _current),
-                      // A concrete expanding child guarantees the canvas fills
-                      // the box and stays hit-testable; `size: Size.infinite`
-                      // with no child can collapse to zero under loose
-                      // constraints, leaving nothing to draw on.
-                      child: const SizedBox.expand(),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ),
-                ),
-              );
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Listener(
+                        behavior: HitTestBehavior.opaque,
+                        onPointerDown: (e) =>
+                            _start(e.localPosition, e.pressure),
+                        onPointerMove: (e) =>
+                            _extend(e.localPosition, e.pressure),
+                        onPointerUp: (e) => _end(),
+                        child: CustomPaint(
+                          painter: _DrawPainter(_strokes, _current),
+                          // A concrete expanding child guarantees the canvas fills
+                          // the box and stays hit-testable; `size: Size.infinite`
+                          // with no child can collapse to zero under loose
+                          // constraints, leaving nothing to draw on.
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                    ),
+                  );
                 },
               ),
             ),
@@ -1024,8 +1042,10 @@ class _SecretEditorState extends State<_SecretEditor> {
   Future<void> _finalize() async {
     if (!_revealed) return;
     widget.content['secret'] = true;
-    widget.content['cipher'] =
-        await ArcheCrypto.encryptArc1(_text.text, VaultSession.instance.masterKey);
+    widget.content['cipher'] = await ArcheCrypto.encryptArc1(
+      _text.text,
+      VaultSession.instance.masterKey,
+    );
   }
 
   Future<void> _reveal() async {
@@ -1042,7 +1062,9 @@ class _SecretEditorState extends State<_SecretEditor> {
       _text.text = cipher.isEmpty
           ? ''
           : await ArcheCrypto.decryptArc1(
-              cipher, VaultSession.instance.masterKey);
+              cipher,
+              VaultSession.instance.masterKey,
+            );
       setState(() => _revealed = true);
     } on VaultException catch (e) {
       setState(() => _error = e.message);
@@ -1070,48 +1092,48 @@ class _SecretEditorState extends State<_SecretEditor> {
     }
     return SingleChildScrollView(
       child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 8),
-        const Icon(Icons.lock_outline, size: 40),
-        const SizedBox(height: 12),
-        const Text(
-          'This secret is hidden. Enter your vault PIN to reveal and edit it.',
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _pin,
-          obscureText: true,
-          keyboardType: TextInputType.number,
-          enabled: !_busy,
-          onSubmitted: (_) => _reveal(),
-          decoration: const InputDecoration(
-            labelText: 'Vault PIN',
-            border: OutlineInputBorder(),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          const Icon(Icons.lock_outline, size: 40),
+          const SizedBox(height: 12),
+          const Text(
+            'This secret is hidden. Enter your vault PIN to reveal and edit it.',
+            textAlign: TextAlign.center,
           ),
-        ),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _pin,
+            obscureText: true,
+            keyboardType: TextInputType.number,
+            enabled: !_busy,
+            onSubmitted: (_) => _reveal(),
+            decoration: const InputDecoration(
+              labelText: 'Vault PIN',
+              border: OutlineInputBorder(),
             ),
           ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: _busy ? null : _reveal,
-          child: _busy
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Reveal'),
-        ),
-      ],
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: _busy ? null : _reveal,
+            child: _busy
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Reveal'),
+          ),
+        ],
       ),
     );
   }

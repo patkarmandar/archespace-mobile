@@ -19,8 +19,8 @@ bool isNetworkError(Object e) {
 /// bad requests) surfaces the server's actual message so the failure is
 /// diagnosable instead of masked behind a generic connection error.
 String saveErrorMessage(Object e) {
-  if (isNetworkError(e)) return 'Could not save. Check your connection.';
-  if (e is PostgrestException) return 'Could not save: ${e.message}';
-  if (e is AuthException) return 'Could not save: ${e.message}';
-  return 'Could not save. Please try again.';
+  if (isNetworkError(e)) return "Couldn't save. Check your connection.";
+  if (e is PostgrestException) return "Couldn't save: ${e.message}";
+  if (e is AuthException) return "Couldn't save: ${e.message}";
+  return "Couldn't save. Please try again.";
 }

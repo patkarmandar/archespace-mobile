@@ -49,20 +49,26 @@ class SearchRepository {
     for (final row in spaceRows) {
       final id = row['id'] as String;
       final name = await ArcheCrypto.decryptArc1(
-          (row['name'] ?? '') as String, _masterKey);
+        (row['name'] ?? '') as String,
+        _masterKey,
+      );
       final description = await ArcheCrypto.decryptArc1(
-          (row['description'] ?? '') as String, _masterKey);
+        (row['description'] ?? '') as String,
+        _masterKey,
+      );
       final tags = await _decodeTags(row['tags']);
       spaceNameById[id] = name;
-      hits.add(SearchHit(
-        isSpace: true,
-        id: id,
-        spaceId: id,
-        spaceName: name,
-        title: name,
-        type: 'space',
-        haystack: '$name $description ${tags.join(' ')}'.toLowerCase(),
-      ));
+      hits.add(
+        SearchHit(
+          isSpace: true,
+          id: id,
+          spaceId: id,
+          spaceName: name,
+          title: name,
+          type: 'space',
+          haystack: '$name $description ${tags.join(' ')}'.toLowerCase(),
+        ),
+      );
     }
 
     final itemRows = await _client
@@ -74,18 +80,22 @@ class SearchRepository {
     for (final row in itemRows) {
       final type = (row['type'] ?? '') as String;
       final title = await ArcheCrypto.decryptArc1(
-          (row['title'] ?? '') as String, _masterKey);
+        (row['title'] ?? '') as String,
+        _masterKey,
+      );
       final content = await _decodeContent(row['content']);
       final spaceId = row['space_id'] as String;
-      hits.add(SearchHit(
-        isSpace: false,
-        id: row['id'] as String,
-        spaceId: spaceId,
-        spaceName: spaceNameById[spaceId] ?? '',
-        title: title,
-        type: type,
-        haystack: _itemText(type, title, content).toLowerCase(),
-      ));
+      hits.add(
+        SearchHit(
+          isSpace: false,
+          id: row['id'] as String,
+          spaceId: spaceId,
+          spaceName: spaceNameById[spaceId] ?? '',
+          title: title,
+          type: type,
+          haystack: _itemText(type, title, content).toLowerCase(),
+        ),
+      );
     }
 
     return hits;

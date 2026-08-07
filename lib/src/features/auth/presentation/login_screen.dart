@@ -79,10 +79,14 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       await _auth.requestPasswordReset(email);
-      setState(() => _info =
-          'Password reset link sent. Check your email to set a new password.');
+      setState(
+        () => _info =
+            'Password reset link sent. Check your email to set a new password.',
+      );
     } catch (_) {
-      setState(() => _error = 'Could not send the reset link. Check your connection.');
+      setState(
+        () => _error = "Couldn't send the reset link. Check your connection.",
+      );
     } finally {
       if (mounted) setState(() => _resetLoading = false);
     }
@@ -100,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Could not sign in. Check your connection.');
+      setState(() => _error = "Couldn't sign in. Check your connection.");
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -136,13 +140,16 @@ class _LoginScreenState extends State<LoginScreen> {
         _mode = _Mode.signIn;
         _password.clear();
         _confirm.clear();
-        _info = 'Account created. Check your email to confirm your address, '
+        _info =
+            'Account created. Check your email to confirm your address, '
             'then sign in.';
       });
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Could not create your account. Check your connection.');
+      setState(
+        () => _error = "Couldn't create your account. Check your connection.",
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -181,9 +188,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: SegmentedButton<_Mode>(
                         segments: const [
                           ButtonSegment(
-                              value: _Mode.signIn, label: Text('Sign in')),
+                            value: _Mode.signIn,
+                            label: Text('Sign in'),
+                          ),
                           ButtonSegment(
-                              value: _Mode.signUp, label: Text('Create account')),
+                            value: _Mode.signUp,
+                            label: Text('Create account'),
+                          ),
                         ],
                         selected: {_mode},
                         showSelectedIcon: false,
@@ -215,7 +226,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(
-                            _obscure ? Icons.visibility : Icons.visibility_off),
+                          _obscure ? Icons.visibility : Icons.visibility_off,
+                        ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
@@ -237,14 +249,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                   if (_info != null) ...[
                     const SizedBox(height: 12),
                     Text(
                       _info!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -264,8 +280,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (!_isSignUp) ...[
                     const SizedBox(height: 4),
                     TextButton(
-                      onPressed:
-                          (_loading || _resetLoading) ? null : _forgotPassword,
+                      onPressed: (_loading || _resetLoading)
+                          ? null
+                          : _forgotPassword,
                       child: _resetLoading
                           ? const SizedBox(
                               height: 18,

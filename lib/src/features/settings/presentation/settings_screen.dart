@@ -51,7 +51,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _enableBiometric() async {
-    final ok = await _biometric.authenticate('Confirm to enable biometric unlock');
+    final ok = await _biometric.authenticate(
+      'Confirm to enable biometric unlock',
+    );
     if (!ok) return;
     await _store.saveMasterKey(VaultSession.instance.masterKey);
     if (!mounted) return;
@@ -68,7 +70,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ok = await confirmAction(
       context,
       title: 'Disable biometric unlock?',
-      message: 'The saved key on this device will be forgotten. You will need '
+      message:
+          'The saved key on this device will be forgotten. You will need '
           'your vault PIN to unlock next time.',
       confirmLabel: 'Disable',
       destructive: true,
@@ -77,16 +80,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _store.clear();
     if (!mounted) return;
     setState(() => _biometricEnabled = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Biometric unlock disabled.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Biometric unlock disabled.')));
   }
 
   Future<void> _signOut() async {
     final ok = await confirmAction(
       context,
       title: 'Sign out?',
-      message: 'You will need your login password and vault PIN to sign back in.',
+      message:
+          'You will need your login password and vault PIN to sign back in.',
       confirmLabel: 'Sign out',
       destructive: true,
     );
@@ -101,15 +105,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _snack(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
   Future<void> _exportBackup() async {
     try {
-      final json =
-          await BackupRepository(VaultSession.instance.masterKey).exportJson();
+      final json = await BackupRepository(
+        VaultSession.instance.masterKey,
+      ).exportJson();
       final bytes = Uint8List.fromList(utf8.encode(json));
       final date = DateTime.now().toIso8601String().substring(0, 10);
       final path = await FilePicker.platform.saveFile(
@@ -121,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       if (path != null) _snack('Backup saved.');
     } catch (_) {
-      _snack('Could not export the backup.');
+      _snack("Couldn't export the backup.");
     }
   }
 
@@ -134,13 +140,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final path = result?.files.single.path;
       if (path == null) return;
       final text = await File(path).readAsString();
-      final count = await BackupRepository(VaultSession.instance.masterKey)
-          .importJson(text);
+      final count = await BackupRepository(
+        VaultSession.instance.masterKey,
+      ).importJson(text);
       _snack('Imported $count ${count == 1 ? 'item' : 'items'}.');
-    } on FormatException catch (e) {
-      _snack('Invalid backup: ${e.message}');
+    } on FormatException {
+      _snack("That backup file isn't valid.");
     } catch (_) {
-      _snack('Could not import the backup.');
+      _snack("Couldn't import the backup.");
     }
   }
 
@@ -162,14 +169,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.alternate_email),
               title: const Text('Change email'),
-              subtitle: const Text('Update your account email address'),
+              subtitle: const Text('Update your email address'),
               onTap: () => _push(const ChangeEmailScreen()),
             ),
             ListTile(
-              leading: Icon(Icons.person_remove_outlined,
-                  color: Theme.of(context).colorScheme.error),
-              title: Text('Delete account',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              leading: Icon(
+                Icons.person_remove_outlined,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                'Delete account',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
               subtitle: const Text('Permanently delete your account and data'),
               onTap: () => _push(const DeleteAccountScreen()),
             ),
@@ -179,13 +190,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.upload_file_outlined),
               title: const Text('Export backup'),
-              subtitle: const Text('Save all spaces + items as a JSON file'),
+              subtitle: const Text('Save all your spaces and items to a file'),
               onTap: _exportBackup,
             ),
             ListTile(
               leading: const Icon(Icons.download_outlined),
               title: const Text('Import backup'),
-              subtitle: const Text('Add spaces + items from a JSON file'),
+              subtitle: const Text(
+                'Restore spaces and items from a backup file',
+              ),
               onTap: _importBackup,
             ),
             const _SectionHeader('Storage'),
@@ -194,7 +207,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('Archive'),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const StorageScreen(mode: StorageMode.archive),
+                  builder: (_) =>
+                      const StorageScreen(mode: StorageMode.archive),
                 ),
               ),
             ),
@@ -229,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.vpn_key_outlined),
               title: const Text('Recovery code'),
-              subtitle: const Text('Create or replace your one-time code'),
+              subtitle: const Text('Create or replace your recovery code'),
               onTap: () => _push(const SetupRecoveryScreen()),
             ),
             ListTile(
@@ -249,12 +263,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ListTile(
                 leading: const Icon(Icons.fingerprint),
                 title: const Text('Enable biometric unlock'),
-                subtitle: const Text('Unlock with fingerprint or face next time'),
+                subtitle: const Text(
+                  'Unlock with fingerprint or face next time',
+                ),
                 onTap: _enableBiometric,
               ),
             const Divider(),
             ListTile(
-              leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+              leading: Icon(
+                Icons.logout,
+                color: Theme.of(context).colorScheme.error,
+              ),
               title: Text(
                 'Sign out',
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -305,9 +324,12 @@ class _BuildFooterState extends State<_BuildFooter> {
 
   @override
   Widget build(BuildContext context) {
-    final muted =
-        Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7);
-    final baseStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: muted);
+    final muted = Theme.of(
+      context,
+    ).textTheme.bodySmall?.color?.withValues(alpha: 0.7);
+    final baseStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: muted);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 24),
       child: Center(
@@ -320,8 +342,9 @@ class _BuildFooterState extends State<_BuildFooter> {
                 text: BuildInfo.buildHash,
                 style: baseStyle?.copyWith(
                   fontFamily: 'monospace',
-                  decoration:
-                      BuildInfo.isStamped ? TextDecoration.underline : null,
+                  decoration: BuildInfo.isStamped
+                      ? TextDecoration.underline
+                      : null,
                   color: BuildInfo.isStamped
                       ? Theme.of(context).colorScheme.primary
                       : muted,
@@ -388,8 +411,11 @@ class _AppearanceSection extends StatelessWidget {
                           ),
                         ),
                         child: appearance.accentId == option.id
-                            ? const Icon(Icons.check,
-                                color: Colors.white, size: 20)
+                            ? const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 20,
+                              )
                             : null,
                       ),
                     ),

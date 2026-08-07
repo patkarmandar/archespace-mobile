@@ -68,8 +68,9 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
 
   Future<void> _load() async {
     try {
-      final result = await ItemRepository(VaultSession.instance.masterKey)
-          .listItems(widget.space.id);
+      final result = await ItemRepository(
+        VaultSession.instance.masterKey,
+      ).listItems(widget.space.id);
       if (mounted) {
         setState(() {
           _items = result.items;
@@ -118,24 +119,25 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   void _enterSelect() => setState(() => _selectMode = true);
 
   void _exitSelect() => setState(() {
-        _selectMode = false;
-        _selected.clear();
-      });
+    _selectMode = false;
+    _selected.clear();
+  });
 
   void _toggleSelect(String id) => setState(() {
-        if (!_selected.remove(id)) _selected.add(id);
-      });
+    if (!_selected.remove(id)) _selected.add(id);
+  });
 
   void _selectAll() => setState(() {
-        _selected
-          ..clear()
-          ..addAll((_items ?? const <SpaceItem>[]).map((i) => i.id));
-      });
+    _selected
+      ..clear()
+      ..addAll((_items ?? const <SpaceItem>[]).map((i) => i.id));
+  });
 
   void _setSort(String value) {
     setState(() => _sort = value);
-    SharedPreferences.getInstance()
-        .then((prefs) => prefs.setString('sort_items', value));
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setString('sort_items', value),
+    );
   }
 
   /// `newIndex` arrives already adjusted for the removed item (onReorderItem).
@@ -148,10 +150,11 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
 
   Future<void> _persistOrder(List<SpaceItem> list) async {
     try {
-      await ItemRepository(VaultSession.instance.masterKey)
-          .reorder(list.map((i) => i.id).toList());
+      await ItemRepository(
+        VaultSession.instance.masterKey,
+      ).reorder(list.map((i) => i.id).toList());
     } catch (_) {
-      _showError('Could not save the new order.');
+      _showError("Couldn't save the new order.");
       if (mounted) _load();
     }
   }
@@ -165,7 +168,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
         _load();
       }
     } catch (_) {
-      _showError('Bulk action failed.');
+      _showError("Couldn't complete that action.");
     }
   }
 
@@ -177,11 +180,11 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   Future<void> _bulkMoveItems() async {
     List<Space> spaces;
     try {
-      spaces =
-          (await SpaceRepository(VaultSession.instance.masterKey).listSpaces())
-              .spaces;
+      spaces = (await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).listSpaces()).spaces;
     } catch (_) {
-      _showError('Could not load spaces.');
+      _showError("Couldn't load spaces.");
       return;
     }
     final destinations = spaces.where((s) => s.id != widget.space.id).toList();
@@ -200,8 +203,10 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text('Move to space',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                'Move to space',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             for (final s in destinations)
               ListTile(
@@ -220,13 +225,14 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
 
   Future<void> _togglePinItem(SpaceItem item) async {
     try {
-      await ItemRepository(VaultSession.instance.masterKey)
-          .setPinned(item.id, !item.pinned);
+      await ItemRepository(
+        VaultSession.instance.masterKey,
+      ).setPinned(item.id, !item.pinned);
       if (mounted) _load();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not update the item.')),
+          const SnackBar(content: Text("Couldn't update the item.")),
         );
       }
     }
@@ -234,31 +240,31 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
 
   Future<void> _duplicateItem(SpaceItem item) async {
     try {
-      await ItemRepository(VaultSession.instance.masterKey)
-          .duplicateItem(widget.space.id, item);
+      await ItemRepository(
+        VaultSession.instance.masterKey,
+      ).duplicateItem(widget.space.id, item);
       if (mounted) {
         _load();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item duplicated')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Item duplicated')));
       }
     } catch (_) {
-      _showError('Could not duplicate the item.');
+      _showError("Couldn't duplicate the item.");
     }
   }
 
   Future<void> _moveItem(SpaceItem item) async {
     List<Space> spaces;
     try {
-      spaces =
-          (await SpaceRepository(VaultSession.instance.masterKey).listSpaces())
-              .spaces;
+      spaces = (await SpaceRepository(
+        VaultSession.instance.masterKey,
+      ).listSpaces()).spaces;
     } catch (_) {
-      _showError('Could not load spaces.');
+      _showError("Couldn't load spaces.");
       return;
     }
-    final destinations =
-        spaces.where((s) => s.id != widget.space.id).toList();
+    final destinations = spaces.where((s) => s.id != widget.space.id).toList();
     if (!mounted) return;
     if (destinations.isEmpty) {
       _showError('No other space to move to.');
@@ -274,8 +280,10 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text('Move to space',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                'Move to space',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             for (final s in destinations)
               ListTile(
@@ -289,30 +297,33 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     );
     if (target == null) return;
     try {
-      await ItemRepository(VaultSession.instance.masterKey)
-          .moveItem(item.id, target.id);
+      await ItemRepository(
+        VaultSession.instance.masterKey,
+      ).moveItem(item.id, target.id);
       if (mounted) {
         _load();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Moved to ${target.name}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Moved to ${target.name}')));
       }
     } catch (_) {
-      _showError('Could not move the item.');
+      _showError("Couldn't move the item.");
     }
   }
 
   Future<void> _archiveItem(SpaceItem item) async {
     try {
-      await ItemRepository(VaultSession.instance.masterKey).archiveItem(item.id);
+      await ItemRepository(
+        VaultSession.instance.masterKey,
+      ).archiveItem(item.id);
       if (mounted) {
         _load();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item archived')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Item archived')));
       }
     } catch (_) {
-      _showError('Could not archive the item.');
+      _showError("Couldn't archive the item.");
     }
   }
 
@@ -334,14 +345,15 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
         );
       }
     } catch (_) {
-      _showError('Could not delete the item.');
+      _showError("Couldn't delete the item.");
     }
   }
 
   void _showError(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -353,10 +365,15 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   Future<void> _exportSpace() async {
     try {
       final bytes = await PdfExporter.buildSpace(
-          widget.space.name, _items ?? const []);
-      await Printing.sharePdf(bytes: bytes, filename: _fileName(widget.space.name));
+        widget.space.name,
+        _items ?? const [],
+      );
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: _fileName(widget.space.name),
+      );
     } catch (_) {
-      _showError('Could not export the space.');
+      _showError("Couldn't export the space.");
     }
   }
 
@@ -365,7 +382,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
       final bytes = await PdfExporter.buildItem(item);
       await Printing.sharePdf(bytes: bytes, filename: _fileName(item.title));
     } catch (_) {
-      _showError('Could not export the item.');
+      _showError("Couldn't export the item.");
     }
   }
 
@@ -426,7 +443,8 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
             )
           : AppBar(
               title: Text(
-                  widget.space.name.isEmpty ? 'Untitled' : widget.space.name),
+                widget.space.name.isEmpty ? 'Untitled' : widget.space.name,
+              ),
               actions: [
                 if (hasItems) SortMenu(value: _sort, onChanged: _setSort),
                 if (hasItems)
@@ -513,7 +531,9 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     }
     final all = _items ?? const <SpaceItem>[];
     if (all.isEmpty) {
-      return const ScrollableMessage('No items in this space.');
+      return const ScrollableMessage(
+        'No items yet.\nTap + to add your first item.',
+      );
     }
     final items = applySort(
       all,
@@ -545,17 +565,17 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           child: KeyedSubtree(
             key: isFocus ? _focusKey : null,
             child: ItemCard(
-            item: item,
-            selectMode: _selectMode,
-            selected: _selected.contains(item.id),
-            onSelectToggle: () => _toggleSelect(item.id),
-            onTap: isEditableType(item.type) ? () => _editItem(item) : null,
-            onTogglePin: () => _togglePinItem(item),
-            onDuplicate: () => _duplicateItem(item),
-            onMove: () => _moveItem(item),
-            onArchive: () => _archiveItem(item),
-            onExport: () => _exportItem(item),
-            onDelete: () => _deleteItem(item),
+              item: item,
+              selectMode: _selectMode,
+              selected: _selected.contains(item.id),
+              onSelectToggle: () => _toggleSelect(item.id),
+              onTap: isEditableType(item.type) ? () => _editItem(item) : null,
+              onTogglePin: () => _togglePinItem(item),
+              onDuplicate: () => _duplicateItem(item),
+              onMove: () => _moveItem(item),
+              onArchive: () => _archiveItem(item),
+              onExport: () => _exportItem(item),
+              onDelete: () => _deleteItem(item),
             ),
           ),
         );

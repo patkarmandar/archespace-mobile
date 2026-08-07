@@ -25,7 +25,9 @@ class SpaceRepository {
     try {
       rows = await _client
           .from('spaces')
-          .select('id, name, description, tags, color, pinned, position, created_at')
+          .select(
+            'id, name, description, tags, color, pinned, position, created_at',
+          )
           .isFilter('deleted_at', null)
           .isFilter('archived_at', null)
           .order('pinned', ascending: false)
@@ -66,19 +68,25 @@ class SpaceRepository {
     final spaces = <Space>[];
     for (final row in rows) {
       final m = row as Map;
-      spaces.add(Space(
-        id: m['id'] as String,
-        name: await ArcheCrypto.decryptArc1(
-            (m['name'] ?? '') as String, _masterKey),
-        description: await ArcheCrypto.decryptArc1(
-            (m['description'] ?? '') as String, _masterKey),
-        pinned: (m['pinned'] ?? false) as bool,
-        tags: await _decodeTags(m['tags']),
-        color: m['color'] as String?,
-        itemCount: (m['_item_count'] ?? 0) as int,
-        pinnedCount: (m['_pinned_count'] ?? 0) as int,
-        createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
-      ));
+      spaces.add(
+        Space(
+          id: m['id'] as String,
+          name: await ArcheCrypto.decryptArc1(
+            (m['name'] ?? '') as String,
+            _masterKey,
+          ),
+          description: await ArcheCrypto.decryptArc1(
+            (m['description'] ?? '') as String,
+            _masterKey,
+          ),
+          pinned: (m['pinned'] ?? false) as bool,
+          tags: await _decodeTags(m['tags']),
+          color: m['color'] as String?,
+          itemCount: (m['_item_count'] ?? 0) as int,
+          pinnedCount: (m['_pinned_count'] ?? 0) as int,
+          createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
+        ),
+      );
     }
     return spaces;
   }
@@ -86,8 +94,9 @@ class SpaceRepository {
   Future<List<String>> _decodeTags(Object? raw) async {
     if (raw is List) return raw.map((e) => e.toString()).toList();
     if (raw is String && raw.isNotEmpty) {
-      final text =
-          raw.startsWith('arc1:') ? await ArcheCrypto.decryptArc1(raw, _masterKey) : raw;
+      final text = raw.startsWith('arc1:')
+          ? await ArcheCrypto.decryptArc1(raw, _masterKey)
+          : raw;
       try {
         final decoded = jsonDecode(text);
         if (decoded is List) return decoded.map((e) => e.toString()).toList();
@@ -123,8 +132,11 @@ class SpaceRepository {
     };
     if (space.tags.isNotEmpty) payload['tags'] = await _encTags(space.tags);
 
-    final created =
-        await _client.from('spaces').insert(payload).select('id').single();
+    final created = await _client
+        .from('spaces')
+        .insert(payload)
+        .select('id')
+        .single();
     final newId = created['id'] as String;
 
     final srcItems = await _client
@@ -185,13 +197,16 @@ class SpaceRepository {
     String? color,
     List<String> tags = const [],
   }) async {
-    await _client.from('spaces').update({
-      'name': await _enc(name),
-      'description': await _enc(description),
-      'color': color,
-      // `tags` is jsonb NOT NULL; store an encrypted array, never null.
-      'tags': await _encTags(tags),
-    }).eq('id', id);
+    await _client
+        .from('spaces')
+        .update({
+          'name': await _enc(name),
+          'description': await _enc(description),
+          'color': color,
+          // `tags` is jsonb NOT NULL; store an encrypted array, never null.
+          'tags': await _encTags(tags),
+        })
+        .eq('id', id);
   }
 
   Future<void> setPinned(String id, bool pinned) async {
@@ -225,14 +240,16 @@ class SpaceRepository {
     if (ids.isEmpty) return;
     await _client
         .from('spaces')
-        .update({'archived_at': _nowIso()}).inFilter('id', ids);
+        .update({'archived_at': _nowIso()})
+        .inFilter('id', ids);
   }
 
   Future<void> bulkDelete(List<String> ids) async {
     if (ids.isEmpty) return;
     await _client
         .from('spaces')
-        .update({'deleted_at': _nowIso()}).inFilter('id', ids);
+        .update({'deleted_at': _nowIso()})
+        .inFilter('id', ids);
   }
 
   /// Soft-delete to the recycle bin (sets deleted_at), matching the web.

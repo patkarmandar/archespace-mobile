@@ -18,14 +18,18 @@ class SpaceEditorScreen extends StatefulWidget {
 }
 
 class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
-  late final TextEditingController _name =
-      TextEditingController(text: widget.existing?.name ?? '');
-  late final TextEditingController _description =
-      TextEditingController(text: widget.existing?.description ?? '');
+  late final TextEditingController _name = TextEditingController(
+    text: widget.existing?.name ?? '',
+  );
+  late final TextEditingController _description = TextEditingController(
+    text: widget.existing?.description ?? '',
+  );
   final TextEditingController _tagInput = TextEditingController();
 
   late String? _color = widget.existing?.color;
-  late final List<String> _tags = List<String>.of(widget.existing?.tags ?? const []);
+  late final List<String> _tags = List<String>.of(
+    widget.existing?.tags ?? const [],
+  );
 
   bool _saving = false;
 
@@ -53,7 +57,7 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
     final name = _name.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a name.')),
+        const SnackBar(content: Text('Enter a name for the space.')),
       );
       return;
     }
@@ -80,9 +84,9 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(saveErrorMessage(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(saveErrorMessage(e))));
       }
     }
   }
@@ -148,14 +152,14 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
   }
 
   Widget _label(String text) => Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.6,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      );
+    text,
+    style: TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.6,
+      color: Theme.of(context).colorScheme.primary,
+    ),
+  );
 
   Widget _colorPicker() {
     final scheme = Theme.of(context).colorScheme;
@@ -178,8 +182,8 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
           child: color == null
               ? Icon(Icons.block, size: 18, color: scheme.outline)
               : (isSelected
-                  ? const Icon(Icons.check, color: Colors.white, size: 20)
-                  : null),
+                    ? const Icon(Icons.check, color: Colors.white, size: 20)
+                    : null),
         ),
       );
     }
@@ -218,7 +222,7 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
           textInputAction: TextInputAction.done,
           onSubmitted: _addTags,
           decoration: const InputDecoration(
-            hintText: 'Add a tag and press enter',
+            hintText: 'Add a tag and press Enter',
             border: OutlineInputBorder(),
             isDense: true,
           ),

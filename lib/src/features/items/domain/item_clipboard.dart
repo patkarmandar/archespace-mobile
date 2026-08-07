@@ -2,14 +2,14 @@ import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
 /// Types whose content can be copied to the clipboard as plain text.
 bool isCopyableType(String type) => const {
-      'textbox',
-      'markdown',
-      'menu_list',
-      'numbered_list',
-      'checkbox_list',
-      'card_list',
-      'table',
-    }.contains(type);
+  'textbox',
+  'markdown',
+  'menu_list',
+  'numbered_list',
+  'checkbox_list',
+  'card_list',
+  'table',
+}.contains(type);
 
 /// Serialize an item's content to plain text for copy-to-clipboard, matching
 /// the web `itemToClipboardText` (lists bulleted/numbered, cards as
@@ -50,9 +50,11 @@ String _list(Map<String, dynamic> c, {required bool ordered}) {
 String _cards(Map<String, dynamic> c) {
   return (c['items'] as List? ?? const [])
       .whereType<Map>()
-      .map((e) =>
-          '${(e['title'] ?? '').toString()}\n${(e['description'] ?? '').toString()}'
-              .trim())
+      .map(
+        (e) =>
+            '${(e['title'] ?? '').toString()}\n${(e['description'] ?? '').toString()}'
+                .trim(),
+      )
       .where((s) => s.isNotEmpty)
       .join('\n\n');
 }

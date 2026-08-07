@@ -18,8 +18,9 @@ class StorageScreen extends StatefulWidget {
 }
 
 class _StorageScreenState extends State<StorageScreen> {
-  final StorageRepository _repo =
-      StorageRepository(VaultSession.instance.masterKey);
+  final StorageRepository _repo = StorageRepository(
+    VaultSession.instance.masterKey,
+  );
   List<StoredEntry>? _entries;
   Object? _error;
 
@@ -33,8 +34,9 @@ class _StorageScreenState extends State<StorageScreen> {
 
   Future<void> _load() async {
     try {
-      final entries =
-          _isBin ? await _repo.loadDeleted() : await _repo.loadArchived();
+      final entries = _isBin
+          ? await _repo.loadDeleted()
+          : await _repo.loadArchived();
       if (mounted) {
         setState(() {
           _entries = entries;
@@ -55,7 +57,7 @@ class _StorageScreenState extends State<StorageScreen> {
       }
       if (mounted) _load();
     } catch (_) {
-      _snack('Could not restore.');
+      _snack("Couldn't restore it.");
     }
   }
 
@@ -65,8 +67,10 @@ class _StorageScreenState extends State<StorageScreen> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Delete permanently?'),
-          content: Text('"${e.label.isEmpty ? 'Untitled' : e.label}" '
-              'will be permanently deleted. This cannot be undone.'),
+          content: Text(
+            '"${e.label.isEmpty ? 'Untitled' : e.label}" '
+            'will be permanently deleted. This cannot be undone.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -89,14 +93,15 @@ class _StorageScreenState extends State<StorageScreen> {
       }
       if (mounted) _load();
     } catch (_) {
-      _snack('Could not delete.');
+      _snack("Couldn't delete it.");
     }
   }
 
   void _snack(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -121,7 +126,11 @@ class _StorageScreenState extends State<StorageScreen> {
     }
     final entries = _entries ?? const <StoredEntry>[];
     if (entries.isEmpty) {
-      return Center(child: Text(_isBin ? 'The bin is empty.' : 'Nothing archived.'));
+      return Center(
+        child: Text(
+          _isBin ? 'The recycle bin is empty.' : 'Nothing archived yet.',
+        ),
+      );
     }
     final spaces = entries.where((e) => e.isSpace).toList();
     final items = entries.where((e) => !e.isSpace).toList();
