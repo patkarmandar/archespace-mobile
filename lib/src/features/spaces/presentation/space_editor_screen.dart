@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:archespace_mobile/src/features/spaces/data/space_repository.dart';
@@ -5,6 +6,7 @@ import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space_colors.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
 import 'package:archespace_mobile/src/shared/util/errors.dart';
+import 'package:archespace_mobile/src/shared/widgets/confirm_dialog.dart';
 
 /// Create or edit a space (name, description, colour, tags). Pass [existing] to
 /// edit. Pops `true` on save so the caller can refresh.
@@ -91,61 +93,100 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
     }
   }
 
+  bool _isDirty() {
+    final e = widget.existing;
+    final tags = [..._tags];
+    final pending = _tagInput.text.trim();
+    if (pending.isNotEmpty) tags.add(pending);
+    return _name.text.trim() != (e?.name ?? '').trim() ||
+        _description.text.trim() != (e?.description ?? '').trim() ||
+        _color != e?.color ||
+        !listEquals(tags, e?.tags ?? const []);
+  }
+
+  // Save on leave so edits aren't lost. If there's nothing to save, just close;
+  // if a name is still missing (required), confirm before discarding.
+  Future<void> _handleBack() async {
+    if (_saving) return;
+    if (!_isDirty()) {
+      if (mounted) Navigator.pop(context, false);
+      return;
+    }
+    if (_name.text.trim().isEmpty) {
+      final discard = await confirmAction(
+        context,
+        title: 'Discard changes?',
+        message: 'This space needs a name before it can be saved.',
+        confirmLabel: 'Discard',
+        destructive: true,
+      );
+      if (discard && mounted) Navigator.pop(context, false);
+      return;
+    }
+    await _save(); // pops true on success; on failure shows the error and stays
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.existing != null ? 'Edit space' : 'New space'),
-        actions: [
-          _saving
-              ? const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _handleBack();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.existing != null ? 'Edit space' : 'New space'),
+          actions: [
+            _saving
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    onPressed: _save,
+                    icon: const Icon(Icons.check),
+                    tooltip: 'Save',
                   ),
-                )
-              : IconButton(
-                  onPressed: _save,
-                  icon: const Icon(Icons.check),
-                  tooltip: 'Save',
-                ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              controller: _name,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _description,
-              minLines: 2,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _label('Colour'),
-            const SizedBox(height: 8),
-            _colorPicker(),
-            const SizedBox(height: 20),
-            _label('Tags'),
-            const SizedBox(height: 8),
-            _tagsEditor(),
           ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextField(
+                controller: _name,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _description,
+                minLines: 2,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _label('Colour'),
+              const SizedBox(height: 8),
+              _colorPicker(),
+              const SizedBox(height: 20),
+              _label('Tags'),
+              const SizedBox(height: 8),
+              _tagsEditor(),
+            ],
+          ),
         ),
       ),
     );

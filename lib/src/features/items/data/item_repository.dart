@@ -213,7 +213,9 @@ class ItemRepository {
 
   /// Create a new item. Uses a client-generated id + cache-based position so it
   /// works offline (queued) and appears immediately in the cache.
-  Future<void> createItem({
+  /// Creates an item and returns its new id (so callers can switch to update
+  /// mode for subsequent saves, e.g. auto-save).
+  Future<String> createItem({
     required String spaceId,
     required String type,
     String title = '',
@@ -221,8 +223,9 @@ class ItemRepository {
   }) async {
     final cacheKey = 'items_$spaceId';
     final position = (await CacheStore.readRows(cacheKey)).length;
+    final id = newUuid();
     final row = {
-      'id': newUuid(),
+      'id': id,
       'space_id': spaceId,
       'type': type,
       'title': await _encTitle(title),
@@ -233,5 +236,6 @@ class ItemRepository {
     };
     await WriteQueue.instance.upsert('space_items', row);
     await CacheStore.upsertRow(cacheKey, row);
+    return id;
   }
 }

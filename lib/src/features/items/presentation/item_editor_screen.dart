@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -37,7 +38,29 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
   );
   late final Map<String, dynamic> _content = _initialContent();
 
+  // Null until the item exists in the backend. Set after the first save of a
+  // new item so later auto-saves update it instead of creating duplicates.
+  late String? _itemId = widget.existing?.id;
+
   bool _saving = false;
+
+  // Snapshot of the last persisted state, for change detection.
+  late String _savedTitle = (widget.existing?.title ?? '').trim();
+  late String _savedContentJson = jsonEncode(_content);
+  // True once any save has succeeded, so the caller refreshes on close.
+  bool _savedAny = false;
+
+  // The Secret editor keeps its plaintext to itself (folded into `_content`
+  // only at save via finalize), so its edits can't be seen by diffing
+  // `_content`. It signals changes through these flags instead.
+  bool _secretDirty = false;
+  bool _secretChangedSinceTick = false;
+
+  // Previous auto-save tick's snapshot, so we only save once edits settle
+  // (no change since the last tick) rather than on every keystroke.
+  late String _tickTitle = _title.text;
+  late String _tickContentJson = _savedContentJson;
+  Timer? _autoSaveTimer;
 
   // Some editors (Secret) must run async work (encryption) to fold their state
   // into `_content` just before saving. They register that step here.
@@ -50,84 +73,151 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _autoSaveTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _autoTick(),
+    );
+  }
+
+  @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _title.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
+  bool _isDirty() =>
+      _title.text.trim() != _savedTitle ||
+      jsonEncode(_content) != _savedContentJson ||
+      _secretDirty;
+
+  // Auto-save unsaved edits once they settle (unchanged since the last tick),
+  // so we don't write on every keystroke.
+  void _autoTick() {
+    if (_saving) return;
+    final curTitle = _title.text;
+    final curJson = jsonEncode(_content);
+    final dirty =
+        curTitle.trim() != _savedTitle ||
+        curJson != _savedContentJson ||
+        _secretDirty;
+    final settled =
+        curTitle == _tickTitle &&
+        curJson == _tickContentJson &&
+        !_secretChangedSinceTick;
+    _tickTitle = curTitle;
+    _tickContentJson = curJson;
+    _secretChangedSinceTick = false;
+    if (dirty && settled) _save(silent: true);
+  }
+
+  /// Persists the item. Returns true on success. [silent] suppresses the error
+  /// snackbar (used by background auto-save). Never navigates.
+  Future<bool> _save({bool silent = false}) async {
+    if (_saving) return false;
     setState(() => _saving = true);
     final repo = ItemRepository(VaultSession.instance.masterKey);
     try {
       if (_finalizeContent != null) await _finalizeContent!();
-      if (widget.existing != null) {
+      final title = _title.text.trim();
+      if (_itemId != null) {
         await repo.updateItem(
-          id: widget.existing!.id,
+          id: _itemId!,
           spaceId: widget.spaceId,
           type: widget.type,
-          title: _title.text.trim(),
+          title: title,
           content: _content,
         );
       } else {
-        await repo.createItem(
+        _itemId = await repo.createItem(
           spaceId: widget.spaceId,
           type: widget.type,
-          title: _title.text.trim(),
+          title: title,
           content: _content,
         );
       }
-      if (mounted) Navigator.pop(context, true);
+      _savedTitle = title;
+      _savedContentJson = jsonEncode(_content);
+      _secretDirty = false;
+      _savedAny = true;
+      if (mounted) setState(() => _saving = false);
+      return true;
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(saveErrorMessage(e))));
+        if (!silent) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(saveErrorMessage(e))));
+        }
       }
+      return false;
     }
+  }
+
+  Future<void> _saveAndClose() async {
+    if (await _save() && mounted) Navigator.pop(context, true);
+  }
+
+  // Flush on leave: save pending edits, then close. On a save failure the user
+  // stays in the editor (with the error) so nothing is lost.
+  Future<void> _handleBack() async {
+    if (!_isDirty()) {
+      if (mounted) Navigator.pop(context, _savedAny);
+      return;
+    }
+    if (await _save() && mounted) Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     final label = itemTypeDef(widget.type)?.label ?? 'Item';
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.existing != null ? 'Edit $label' : 'New $label'),
-        actions: [
-          _saving
-              ? const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _handleBack();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.existing != null ? 'Edit $label' : 'New $label'),
+          actions: [
+            _saving
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    onPressed: _saveAndClose,
+                    icon: const Icon(Icons.check),
+                    tooltip: 'Save',
                   ),
-                )
-              : IconButton(
-                  onPressed: _save,
-                  icon: const Icon(Icons.check),
-                  tooltip: 'Save',
+          ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  decoration: const InputDecoration(
+                    hintText: 'Title',
+                    border: InputBorder.none,
+                  ),
                 ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _title,
-                style: Theme.of(context).textTheme.titleLarge,
-                decoration: const InputDecoration(
-                  hintText: 'Title',
-                  border: InputBorder.none,
-                ),
-              ),
-              const Divider(),
-              Expanded(child: _buildBody()),
-            ],
+                const Divider(),
+                Expanded(child: _buildBody()),
+              ],
+            ),
           ),
         ),
       ),
@@ -155,6 +245,10 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         return _SecretEditor(
           content: _content,
           onRegisterFinalize: (fn) => _finalizeContent = fn,
+          onChanged: () {
+            _secretDirty = true;
+            _secretChangedSinceTick = true;
+          },
         );
       default:
         return Center(child: Text("You can't edit this item type yet."));
@@ -1001,10 +1095,12 @@ class _SecretEditor extends StatefulWidget {
   const _SecretEditor({
     required this.content,
     required this.onRegisterFinalize,
+    required this.onChanged,
   });
 
   final Map<String, dynamic> content;
   final void Function(Future<void> Function()) onRegisterFinalize;
+  final VoidCallback onChanged;
 
   @override
   State<_SecretEditor> createState() => _SecretEditorState();
@@ -1069,7 +1165,7 @@ class _SecretEditorState extends State<_SecretEditor> {
     } on VaultException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Could not verify your PIN.');
+      setState(() => _error = "Couldn't verify your PIN.");
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1080,6 +1176,7 @@ class _SecretEditorState extends State<_SecretEditor> {
     if (_revealed) {
       return TextField(
         controller: _text,
+        onChanged: (_) => widget.onChanged(),
         maxLines: null,
         expands: true,
         textAlignVertical: TextAlignVertical.top,
