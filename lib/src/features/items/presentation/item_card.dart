@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:archespace_mobile/src/features/items/domain/item_clipboard.dart';
+import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
 /// Renders one space item as a card: title plus a type-specific body.
@@ -38,17 +39,25 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Border tracks pinned/selected (accent) or a subtle default, matching the
+    // web item card and the mobile space card. Pinned/selected also gets a
+    // faint accent tint (web: bg-accent/5).
+    final accent = selected || item.pinned;
+    final borderColor = accent ? scheme.primary : scheme.outlineVariant;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      shape: selected
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: scheme.primary, width: 2),
-            )
+      clipBehavior: Clip.antiAlias,
+      color: accent
+          ? Color.alphaBlend(
+              scheme.primary.withValues(alpha: 0.05), scheme.surface)
           : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: borderColor, width: selected ? 2 : 1.5),
+      ),
       child: InkWell(
         onTap: selectMode ? onSelectToggle : onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -66,14 +75,38 @@ class ItemCard extends StatelessWidget {
                     ),
                   ),
                 if (item.pinned)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 6),
-                    child: Icon(Icons.push_pin, size: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Icon(Icons.push_pin, size: 16, color: scheme.primary),
+                  ),
+                if (itemTypeDef(item.type) != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: scheme.primary.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Text(
+                        itemTypeDef(item.type)!.label,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.primary,
+                        ),
+                      ),
+                    ),
                   ),
                 Expanded(
                   child: Text(
                     item.title.isEmpty ? 'Untitled' : item.title,
                     style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (!selectMode && isCopyableType(item.type))
@@ -143,7 +176,9 @@ class ItemCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
+            Divider(height: 1, color: scheme.outlineVariant),
+            const SizedBox(height: 10),
             _ItemBody(item: item),
             ],
           ),
