@@ -6,8 +6,9 @@ import 'package:archespace_mobile/src/features/items/domain/item_clipboard.dart'
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
-/// Renders one space item as a card: title plus a type-specific body.
-/// Read-only for this slice (editing comes later).
+/// Renders one space item as a card: a type badge, title, and a type-specific
+/// body preview. Tapping the card opens the full editor; the action menu and
+/// copy button handle per-item actions.
 class ItemCard extends StatelessWidget {
   const ItemCard({
     super.key,
