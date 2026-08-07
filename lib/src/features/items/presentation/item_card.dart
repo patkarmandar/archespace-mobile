@@ -164,12 +164,15 @@ class _ItemBody extends StatelessWidget {
     switch (item.type) {
       case 'textbox':
         final plain = (c['text'] ?? '').toString();
-        return plain.isEmpty ? const _Empty() : SelectableText(plain);
+        // Non-selectable so a tap on the body opens the item (via the card's
+        // InkWell) instead of starting a text selection. Use the copy button
+        // in the header to copy.
+        return plain.isEmpty ? const _Empty() : Text(plain);
       case 'markdown':
         final md = (c['text'] ?? '').toString();
         return md.isEmpty
             ? const _Empty()
-            : MarkdownBody(data: md, selectable: true);
+            : MarkdownBody(data: md, selectable: false);
       case 'menu_list':
         return _ListView(items: _listTexts(c), ordered: false);
       case 'numbered_list':
