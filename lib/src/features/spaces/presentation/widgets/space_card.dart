@@ -106,6 +106,9 @@ class SpaceCard extends StatelessWidget {
                                 color: selected
                                     ? scheme.primary
                                     : scheme.outline,
+                                semanticLabel: selected
+                                    ? 'Selected'
+                                    : 'Not selected',
                               ),
                             ),
                           if (space.pinned)
@@ -115,6 +118,7 @@ class SpaceCard extends StatelessWidget {
                                 Icons.push_pin,
                                 size: 18,
                                 color: scheme.primary,
+                                semanticLabel: 'Pinned',
                               ),
                             ),
                           Expanded(

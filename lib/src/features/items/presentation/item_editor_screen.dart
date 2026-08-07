@@ -431,7 +431,11 @@ class _ListEditorState extends State<_ListEditor> {
                       index: index,
                       child: const Padding(
                         padding: EdgeInsets.all(6),
-                        child: Icon(Icons.drag_handle, size: 18),
+                        child: Icon(
+                          Icons.drag_handle,
+                          size: 18,
+                          semanticLabel: 'Drag to reorder',
+                        ),
                       ),
                     ),
                   ],
@@ -575,7 +579,11 @@ class _CardsEditorState extends State<_CardsEditor> {
                             index: index,
                             child: const Padding(
                               padding: EdgeInsets.all(6),
-                              child: Icon(Icons.drag_handle, size: 18),
+                              child: Icon(
+                                Icons.drag_handle,
+                                size: 18,
+                                semanticLabel: 'Drag to reorder',
+                              ),
                             ),
                           ),
                         ],

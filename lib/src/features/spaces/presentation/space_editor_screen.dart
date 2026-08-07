@@ -206,25 +206,30 @@ class _SpaceEditorScreenState extends State<SpaceEditorScreen> {
     final scheme = Theme.of(context).colorScheme;
     Widget dot(String? id, Color? color) {
       final isSelected = _color == id;
-      return GestureDetector(
-        onTap: () => setState(() => _color = id),
-        child: Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-            border: Border.all(
-              color: isSelected ? scheme.onSurface : scheme.outlineVariant,
-              width: isSelected ? 3 : 1,
+      return Semantics(
+        button: true,
+        selected: isSelected,
+        label: id == null ? 'No colour' : '$id colour',
+        child: GestureDetector(
+          onTap: () => setState(() => _color = id),
+          child: Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+              border: Border.all(
+                color: isSelected ? scheme.onSurface : scheme.outlineVariant,
+                width: isSelected ? 3 : 1,
+              ),
             ),
+            child: color == null
+                ? Icon(Icons.block, size: 18, color: scheme.outline)
+                : (isSelected
+                      ? const Icon(Icons.check, color: Colors.white, size: 20)
+                      : null),
           ),
-          child: color == null
-              ? Icon(Icons.block, size: 18, color: scheme.outline)
-              : (isSelected
-                    ? const Icon(Icons.check, color: Colors.white, size: 20)
-                    : null),
         ),
       );
     }

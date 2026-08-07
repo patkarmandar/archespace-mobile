@@ -75,6 +75,7 @@ class ItemCard extends StatelessWidget {
                         selected ? Icons.check_circle : Icons.circle_outlined,
                         size: 20,
                         color: selected ? scheme.primary : scheme.outline,
+                        semanticLabel: selected ? 'Selected' : 'Not selected',
                       ),
                     ),
                   if (item.pinned)
@@ -84,6 +85,7 @@ class ItemCard extends StatelessWidget {
                         Icons.push_pin,
                         size: 16,
                         color: scheme.primary,
+                        semanticLabel: 'Pinned',
                       ),
                     ),
                   if (itemTypeDef(item.type) != null)
