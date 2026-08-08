@@ -207,6 +207,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () => _push(const ChangeEmailScreen()),
             ),
             ListTile(
+              leading: const Icon(Icons.password_outlined),
+              title: const Text('Change login password'),
+              subtitle: const Text(
+                'Used to sign in, separate from your vault PIN',
+              ),
+              onTap: () => _push(const ChangePasswordScreen()),
+            ),
+            ListTile(
               leading: Icon(
                 Icons.person_remove_outlined,
                 color: Theme.of(context).colorScheme.error,
@@ -256,12 +264,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const _SectionHeader('Security'),
-            ListTile(
-              leading: const Icon(Icons.password_outlined),
-              title: const Text('Change login password'),
-              subtitle: const Text('Used to sign in, separate from your PIN'),
-              onTap: () => _push(const ChangePasswordScreen()),
-            ),
             ListTile(
               leading: const Icon(Icons.pin_outlined),
               title: const Text('Change vault PIN'),
