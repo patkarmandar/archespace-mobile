@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
@@ -57,6 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _error = 'Enter your password.');
       return;
     }
+    // Commit the autofill session so the OS/password manager offers to save.
+    TextInput.finishAutofillContext();
     if (_isSignUp) {
       await _createAccount();
     } else {
@@ -164,135 +167,144 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 380),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Arche Space',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    AppConfig.allowSignup
-                        ? 'Sign in or create an account'
-                        : 'Sign in to your account',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 24),
-                  if (AppConfig.allowSignup) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: SegmentedButton<_Mode>(
-                        segments: const [
-                          ButtonSegment(
-                            value: _Mode.signIn,
-                            label: Text('Sign in'),
-                          ),
-                          ButtonSegment(
-                            value: _Mode.signUp,
-                            label: Text('Create account'),
-                          ),
-                        ],
-                        selected: {_mode},
-                        showSelectedIcon: false,
-                        onSelectionChanged: _loading
-                            ? null
-                            : (selection) => _switchMode(selection.first),
-                      ),
+              child: AutofillGroup(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Arche Space',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    enabled: !_loading,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppConfig.allowSignup
+                          ? 'Sign in or create an account'
+                          : 'Sign in to your account',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _password,
-                    obscureText: _obscure,
-                    enabled: !_loading,
-                    onSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscure ? Icons.visibility : Icons.visibility_off,
+                    const SizedBox(height: 24),
+                    if (AppConfig.allowSignup) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: SegmentedButton<_Mode>(
+                          segments: const [
+                            ButtonSegment(
+                              value: _Mode.signIn,
+                              label: Text('Sign in'),
+                            ),
+                            ButtonSegment(
+                              value: _Mode.signUp,
+                              label: Text('Create account'),
+                            ),
+                          ],
+                          selected: {_mode},
+                          showSelectedIcon: false,
+                          onSelectionChanged: _loading
+                              ? null
+                              : (selection) => _switchMode(selection.first),
                         ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
-                    ),
-                  ),
-                  if (_isSignUp) ...[
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 16),
+                    ],
                     TextField(
-                      controller: _confirm,
-                      obscureText: _obscure,
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
                       enabled: !_loading,
-                      onSubmitted: (_) => _submit(),
                       decoration: const InputDecoration(
-                        labelText: 'Confirm password',
+                        labelText: 'Email',
                         border: OutlineInputBorder(),
                       ),
                     ),
-                  ],
-                  if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                    TextField(
+                      controller: _password,
+                      obscureText: _obscure,
+                      enabled: !_loading,
+                      autofillHints: _isSignUp
+                          ? const [AutofillHints.newPassword]
+                          : const [AutofillHints.password],
+                      onSubmitted: (_) => _submit(),
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscure ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                        ),
                       ),
                     ),
-                  ],
-                  if (_info != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      _info!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
+                    if (_isSignUp) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _confirm,
+                        obscureText: _obscure,
+                        enabled: !_loading,
+                        onSubmitted: (_) => _submit(),
+                        decoration: const InputDecoration(
+                          labelText: 'Confirm password',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                    if (_info != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _info!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _loading ? null : _submit,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: _loading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(_isSignUp ? 'Create account' : 'Sign in'),
                       ),
                     ),
+                    if (!_isSignUp) ...[
+                      const SizedBox(height: 4),
+                      TextButton(
+                        onPressed: (_loading || _resetLoading)
+                            ? null
+                            : _forgotPassword,
+                        child: _resetLoading
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Forgot password?'),
+                      ),
+                    ],
                   ],
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: _loading ? null : _submit,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: _loading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(_isSignUp ? 'Create account' : 'Sign in'),
-                    ),
-                  ),
-                  if (!_isSignUp) ...[
-                    const SizedBox(height: 4),
-                    TextButton(
-                      onPressed: (_loading || _resetLoading)
-                          ? null
-                          : _forgotPassword,
-                      child: _resetLoading
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Forgot password?'),
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),
