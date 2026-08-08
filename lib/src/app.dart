@@ -7,6 +7,7 @@ import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
 import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
+import 'package:archespace_mobile/src/features/vault/presentation/inactivity_locker.dart';
 import 'package:archespace_mobile/src/features/auth/presentation/login_screen.dart';
 import 'package:archespace_mobile/src/features/spaces/presentation/spaces_screen.dart';
 import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
@@ -81,8 +82,9 @@ class _RootGateState extends State<_RootGate> {
     }
     return ValueListenableBuilder<bool>(
       valueListenable: VaultSession.instance.unlocked,
-      builder: (context, unlocked, _) =>
-          unlocked ? const SpacesScreen() : const _VaultGate(),
+      builder: (context, unlocked, _) => unlocked
+          ? const InactivityLocker(child: SpacesScreen())
+          : const _VaultGate(),
     );
   }
 }

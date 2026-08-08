@@ -12,6 +12,7 @@ import 'package:archespace_mobile/src/shared/config/build_info.dart';
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/backup/data/backup_repository.dart';
 import 'package:archespace_mobile/src/features/settings/application/appearance_controller.dart';
+import 'package:archespace_mobile/src/features/vault/application/auto_lock_controller.dart';
 import 'package:archespace_mobile/src/features/settings/presentation/account_security_screens.dart';
 import 'package:archespace_mobile/src/features/storage/presentation/storage_screen.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
@@ -64,6 +65,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _lock() {
     VaultSession.instance.lock();
     Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  Future<void> _pickAutoLock() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Text(
+                'Auto-lock after inactivity',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            for (final o in kAutoLockOptions)
+              ListTile(
+                title: Text(o.label),
+                trailing: o.id == AutoLockController.instance.id
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () => Navigator.pop(sheetContext, o.id),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null) {
+      await AutoLockController.instance.setId(selected);
+      if (mounted) _snack('Auto-lock updated.');
+    }
   }
 
   Future<void> _disableBiometric() async {
@@ -245,6 +279,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('Recovery code'),
               subtitle: const Text('Create or replace your recovery code'),
               onTap: () => _push(const SetupRecoveryScreen()),
+            ),
+            ListenableBuilder(
+              listenable: AutoLockController.instance,
+              builder: (context, _) {
+                final option = kAutoLockOptions.firstWhere(
+                  (o) => o.id == AutoLockController.instance.id,
+                  orElse: () => kAutoLockOptions.last,
+                );
+                return ListTile(
+                  leading: const Icon(Icons.lock_clock_outlined),
+                  title: const Text('Auto-lock'),
+                  subtitle: Text('Lock after inactivity · ${option.label}'),
+                  onTap: _pickAutoLock,
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.lock_outline),
