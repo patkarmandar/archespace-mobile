@@ -927,54 +927,59 @@ class _DrawEditorState extends State<_DrawEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        Row(
           children: [
-            for (final col in _kInkColors)
-              GestureDetector(
-                onTap: () => setState(() => _color = col),
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _parseInk(col, Colors.black),
-                    border: Border.all(
-                      color: _color == col ? accent : Colors.transparent,
-                      width: 3,
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  for (final col in _kInkColors)
+                    GestureDetector(
+                      onTap: () => setState(() => _color = col),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _parseInk(col, Colors.black),
+                          border: Border.all(
+                            color: _color == col ? accent : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  const SizedBox(width: 8),
+                  for (final s in _kInkSizes)
+                    GestureDetector(
+                      onTap: () => setState(() => _size = s),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _size == s
+                                ? accent
+                                : Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        child: Container(
+                          width: s,
+                          height: s,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            const SizedBox(width: 8),
-            for (final s in _kInkSizes)
-              GestureDetector(
-                onTap: () => setState(() => _size = s),
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _size == s
-                          ? accent
-                          : Theme.of(context).dividerColor,
-                    ),
-                  ),
-                  child: Container(
-                    width: s,
-                    height: s,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ),
-            const Spacer(),
+            ),
             IconButton(
               onPressed: _strokes.isEmpty ? null : _undo,
               icon: const Icon(Icons.undo),
