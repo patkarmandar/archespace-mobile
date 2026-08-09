@@ -446,18 +446,18 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
                 widget.space.name.isEmpty ? 'Untitled' : widget.space.name,
               ),
               actions: [
+                if (hasItems)
+                  IconButton(
+                    onPressed: _enterSelect,
+                    icon: const Icon(Icons.checklist),
+                    tooltip: 'Select',
+                  ),
                 if (hasItems) SortMenu(value: _sort, onChanged: _setSort),
                 if (hasItems)
                   IconButton(
                     onPressed: _exportSpace,
                     icon: const Icon(Icons.picture_as_pdf_outlined),
                     tooltip: 'Export PDF',
-                  ),
-                if (hasItems)
-                  IconButton(
-                    onPressed: _enterSelect,
-                    icon: const Icon(Icons.checklist),
-                    tooltip: 'Select',
                   ),
               ],
             ),
