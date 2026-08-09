@@ -26,9 +26,16 @@ class AuthService {
   /// Sign out of this device only. Local scope so ending the session on the
   /// phone does not revoke the user's sessions on their other devices (web or
   /// otherwise) — that would log every platform out at once. Global,
-  /// all-device revocation is reserved for password changes.
+  /// all-device revocation is reserved for password changes and the explicit
+  /// "sign out of all devices" action below.
   Future<void> signOut() async {
     await _client.auth.signOut(scope: SignOutScope.local);
+  }
+
+  /// Sign out of every device by revoking all of the user's sessions
+  /// server-side (global scope). For an explicit "sign out of all devices".
+  Future<void> signOutAllDevices() async {
+    await _client.auth.signOut(scope: SignOutScope.global);
   }
 
   /// Send a password reset email. The link opens the web app's reset page

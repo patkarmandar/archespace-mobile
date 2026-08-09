@@ -133,6 +133,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+  Future<void> _signOutAll() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Sign out of all devices?',
+      message:
+          'This ends your session on every device, including this one. You '
+          'will need your login password and vault PIN to sign back in.',
+      confirmLabel: 'Sign out everywhere',
+      destructive: true,
+    );
+    if (!ok) return;
+    await _auth.signOutAllDevices();
+    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
   void _push(Widget screen) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
@@ -330,6 +345,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
               onTap: _signOut,
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.devices,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                'Sign out of all devices',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              subtitle: const Text('End your session on every device'),
+              onTap: _signOutAll,
             ),
             const _BuildFooter(),
           ],
