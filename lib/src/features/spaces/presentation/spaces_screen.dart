@@ -288,15 +288,6 @@ class _SpacesScreenState extends State<SpacesScreen> {
           : AppBar(
               title: const Text('Spaces'),
               actions: [
-                IconButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const SearchScreen(),
-                    ),
-                  ),
-                  icon: const Icon(Icons.search),
-                  tooltip: 'Search',
-                ),
                 if (hasSpaces) SortMenu(value: _sort, onChanged: _setSort),
                 if (hasSpaces)
                   IconButton(
@@ -369,6 +360,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
               top: false,
               child: Column(
                 children: [
+                  if (!_selectMode && hasSpaces) _buildSearchBar(context),
                   if (_offline) const OfflineBanner(),
                   ValueListenableBuilder<int>(
                     valueListenable: WriteQueue.instance.pending,
@@ -400,6 +392,39 @@ class _SpacesScreenState extends State<SpacesScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Material(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const SearchScreen())),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.search, size: 20, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 10),
+                Text(
+                  'Search spaces and items',
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
