@@ -286,15 +286,8 @@ class _SpacesScreenState extends State<SpacesScreen> {
               ],
             )
           : AppBar(
-              title: const Text('Spaces'),
+              title: const Text('Arche Space'),
               actions: [
-                if (hasSpaces) SortMenu(value: _sort, onChanged: _setSort),
-                if (hasSpaces)
-                  IconButton(
-                    onPressed: _enterSelect,
-                    icon: const Icon(Icons.checklist),
-                    tooltip: 'Select',
-                  ),
                 IconButton(
                   onPressed: VaultSession.instance.lock,
                   icon: const Icon(Icons.lock_outline),
@@ -361,6 +354,11 @@ class _SpacesScreenState extends State<SpacesScreen> {
               child: Column(
                 children: [
                   if (!_selectMode && hasSpaces) _buildSearchBar(context),
+                  if (!_selectMode && hasSpaces)
+                    _buildSpacesHeader(
+                      context,
+                      (_spaces ?? const <Space>[]).length,
+                    ),
                   if (_offline) const OfflineBanner(),
                   ValueListenableBuilder<int>(
                     valueListenable: WriteQueue.instance.pending,
@@ -424,6 +422,37 @@ class _SpacesScreenState extends State<SpacesScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSpacesHeader(BuildContext context, int count) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 4, top: 4, bottom: 4),
+      child: Row(
+        children: [
+          Text(
+            'Spaces',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$count',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: _enterSelect,
+            icon: const Icon(Icons.checklist),
+            tooltip: 'Select',
+          ),
+          SortMenu(value: _sort, onChanged: _setSort),
+        ],
       ),
     );
   }
