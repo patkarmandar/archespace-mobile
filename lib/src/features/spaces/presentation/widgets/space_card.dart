@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:archespace_mobile/src/features/spaces/domain/space.dart';
 import 'package:archespace_mobile/src/features/spaces/domain/space_colors.dart';
+import 'package:archespace_mobile/src/shared/widgets/select_box.dart';
 
 /// A space rendered as a content card (matching the web): a subtle border that
 /// turns accent when pinned or selected, the space colour as a top border only,
@@ -95,22 +96,6 @@ class SpaceCard extends StatelessWidget {
                         ),
                       Row(
                         children: [
-                          if (selectMode)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Icon(
-                                selected
-                                    ? Icons.check_circle
-                                    : Icons.circle_outlined,
-                                size: 20,
-                                color: selected
-                                    ? scheme.primary
-                                    : scheme.outline,
-                                semanticLabel: selected
-                                    ? 'Selected'
-                                    : 'Not selected',
-                              ),
-                            ),
                           if (space.pinned)
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
@@ -134,6 +119,11 @@ class SpaceCard extends StatelessWidget {
                             Icon(
                               Icons.chevron_right,
                               color: scheme.onSurfaceVariant,
+                            ),
+                          if (selectMode)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: SelectBox(selected: selected),
                             ),
                         ],
                       ),

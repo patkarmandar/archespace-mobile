@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_clipboard.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
+import 'package:archespace_mobile/src/shared/widgets/select_box.dart';
 
 /// Renders one space item as a card: a type badge, title, and a type-specific
 /// body preview. Tapping the card opens the full editor; the action menu and
@@ -68,16 +69,6 @@ class ItemCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  if (selectMode)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Icon(
-                        selected ? Icons.check_circle : Icons.circle_outlined,
-                        size: 20,
-                        color: selected ? scheme.primary : scheme.outline,
-                        semanticLabel: selected ? 'Selected' : 'Not selected',
-                      ),
-                    ),
                   if (item.pinned)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
@@ -197,6 +188,11 @@ class ItemCard extends StatelessWidget {
                             ),
                         ],
                       ),
+                    ),
+                  if (selectMode)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: SelectBox(selected: selected),
                     ),
                 ],
               ),
