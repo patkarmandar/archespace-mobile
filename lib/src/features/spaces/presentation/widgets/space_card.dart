@@ -164,15 +164,17 @@ class SpaceCard extends StatelessWidget {
                         Container(
                           decoration: BoxDecoration(
                             border: Border.all(color: scheme.outlineVariant),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_horiz, size: 18),
+                            icon: const Icon(Icons.more_horiz, size: 16),
+                            iconSize: 16,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
-                              minWidth: 34,
-                              minHeight: 34,
+                              minWidth: 30,
+                              minHeight: 30,
                             ),
+                            splashRadius: 18,
                             tooltip: 'Space actions',
                             onSelected: (value) {
                               if (value == 'pin') onTogglePin();
