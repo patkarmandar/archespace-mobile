@@ -35,13 +35,6 @@ const List<ItemTypeDef> kItemTypes = [
     editable: true,
   ),
   ItemTypeDef(
-    type: 'code',
-    label: 'Code',
-    description: 'Code snippet with syntax highlighting',
-    icon: Icons.data_object,
-    editable: true,
-  ),
-  ItemTypeDef(
     type: 'menu_list',
     label: 'List',
     description: 'Simple bullet list',
@@ -88,6 +81,13 @@ const List<ItemTypeDef> kItemTypes = [
     label: 'Drawing',
     description: 'Freehand sketch',
     icon: Icons.brush_outlined,
+    editable: true,
+  ),
+  ItemTypeDef(
+    type: 'code',
+    label: 'Code',
+    description: 'Code snippet with syntax highlighting',
+    icon: Icons.data_object,
     editable: true,
   ),
 ];
