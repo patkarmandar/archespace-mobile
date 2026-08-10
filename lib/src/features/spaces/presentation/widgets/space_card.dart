@@ -168,6 +168,11 @@ class SpaceCard extends StatelessWidget {
                           ),
                           child: PopupMenuButton<String>(
                             icon: const Icon(Icons.more_horiz, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 34,
+                              minHeight: 34,
+                            ),
                             tooltip: 'Space actions',
                             onSelected: (value) {
                               if (value == 'pin') onTogglePin();
