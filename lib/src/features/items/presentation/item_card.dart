@@ -10,7 +10,7 @@ import 'package:archespace_mobile/src/shared/widgets/select_box.dart';
 /// Renders one space item as a card: a type badge, title, and a type-specific
 /// body preview. Tapping the card opens the full editor; the action menu and
 /// copy button handle per-item actions.
-class ItemCard extends StatelessWidget {
+class ItemCard extends StatefulWidget {
   const ItemCard({
     super.key,
     required this.item,
@@ -39,7 +39,25 @@ class ItemCard extends StatelessWidget {
   final VoidCallback? onSelectToggle;
 
   @override
+  State<ItemCard> createState() => _ItemCardState();
+}
+
+class _ItemCardState extends State<ItemCard> {
+  bool _collapsed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
+    final selectMode = widget.selectMode;
+    final selected = widget.selected;
+    final onTap = widget.onTap;
+    final onSelectToggle = widget.onSelectToggle;
+    final onTogglePin = widget.onTogglePin;
+    final onDuplicate = widget.onDuplicate;
+    final onMove = widget.onMove;
+    final onArchive = widget.onArchive;
+    final onDelete = widget.onDelete;
+    final onExport = widget.onExport;
     final scheme = Theme.of(context).colorScheme;
     // Border tracks pinned/selected (accent) or a subtle default, matching the
     // web item card and the mobile space card. Pinned/selected also gets a
@@ -111,6 +129,21 @@ class ItemCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (!selectMode)
+                    SizedBox(
+                      height: 32,
+                      width: 32,
+                      child: IconButton(
+                        icon: Icon(
+                          _collapsed ? Icons.expand_more : Icons.expand_less,
+                          size: 20,
+                        ),
+                        padding: EdgeInsets.zero,
+                        tooltip: _collapsed ? 'Expand' : 'Collapse',
+                        onPressed: () =>
+                            setState(() => _collapsed = !_collapsed),
+                      ),
+                    ),
                   if (!selectMode && isCopyableType(item.type))
                     SizedBox(
                       height: 32,
@@ -196,10 +229,12 @@ class ItemCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Divider(height: 1, color: scheme.outlineVariant),
-              const SizedBox(height: 10),
-              _ItemBody(item: item),
+              if (!_collapsed) ...[
+                const SizedBox(height: 10),
+                Divider(height: 1, color: scheme.outlineVariant),
+                const SizedBox(height: 10),
+                _ItemBody(item: item),
+              ],
             ],
           ),
         ),
