@@ -415,7 +415,7 @@ class _BuildFooterState extends State<_BuildFooter> {
           TextSpan(
             style: baseStyle,
             children: [
-              TextSpan(text: 'Arche Space v${BuildInfo.appVersion}  ·  build '),
+              TextSpan(text: 'ArcheSpace v${BuildInfo.appVersion}  ·  build '),
               TextSpan(
                 text: BuildInfo.buildHash,
                 style: baseStyle?.copyWith(

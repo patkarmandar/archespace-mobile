@@ -24,7 +24,7 @@ class ArcheApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: appearance,
       builder: (context, _) => MaterialApp(
-        title: 'Arche Space',
+        title: 'ArcheSpace',
         themeMode: appearance.themeMode,
         theme: ThemeData(
           colorSchemeSeed: appearance.accent,

@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 
-/// Dart port of the Arche Space `arc1` crypto contract.
+/// Dart port of the ArcheSpace `arc1` crypto contract.
 ///
 /// Must stay byte-compatible with the web reference implementation so data
 /// encrypted on either client decrypts on the other. Validated against

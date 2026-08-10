@@ -286,7 +286,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
               ],
             )
           : AppBar(
-              title: const Text('Arche Space'),
+              title: const Text('ArcheSpace'),
               actions: [
                 IconButton(
                   onPressed: VaultSession.instance.lock,

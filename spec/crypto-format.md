@@ -1,6 +1,6 @@
-# Arche Space crypto format (`arc1`)
+# ArcheSpace crypto format (`arc1`)
 
-This is the language-neutral contract every Arche Space client must implement
+This is the language-neutral contract every ArcheSpace client must implement
 identically. The web app is the reference implementation; any other client
 (the Flutter mobile app, a future backend) must produce and consume the exact
 same bytes, or data encrypted on one client will not decrypt on another.

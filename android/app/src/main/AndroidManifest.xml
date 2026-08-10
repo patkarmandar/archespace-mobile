@@ -3,7 +3,7 @@
          but release builds need it declared here). -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Arche Space"
+        android:label="ArcheSpace"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

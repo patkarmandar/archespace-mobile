@@ -20,7 +20,7 @@ const List<AccentOption> kAccentOptions = [
   AccentOption(
     id: 'mint',
     name: 'Mint Green',
-    description: "Arche Space's signature accent, a refined mint green.",
+    description: "ArcheSpace's signature accent, a refined mint green.",
     color: Color(0xFF32D3AA),
   ),
   AccentOption(

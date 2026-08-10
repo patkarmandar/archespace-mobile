@@ -1,9 +1,9 @@
-# Arche Space Mobile
+# ArcheSpace Mobile
 
 [![Release APK](https://github.com/patkarmandar/archespace-mobile/actions/workflows/release.yml/badge.svg)](https://github.com/patkarmandar/archespace-mobile/actions/workflows/release.yml)
 [![Version](https://img.shields.io/github/v/release/patkarmandar/archespace-mobile)](https://github.com/patkarmandar/archespace-mobile/releases)
 
-The mobile app for [Arche Space](https://github.com/patkarmandar/archespace) — an open source, private, encrypted space to organize everything you are working on. Built with Flutter for Android and iOS.
+The mobile app for [ArcheSpace](https://github.com/patkarmandar/archespace) — an open source, private, encrypted space to organize everything you are working on. Built with Flutter for Android and iOS.
 
 It talks to the **same Supabase backend** as the web app and shares the same client-side `arc1` encryption format, so a vault created on one client opens on the other. It follows the same zero-knowledge architecture: your content is encrypted on-device and the backend only ever stores ciphertext, so the server, its operators, and the developers never see your data in readable form.
 
@@ -65,7 +65,7 @@ It talks to the **same Supabase backend** as the web app and shares the same cli
 
 ## Security model
 
-Arche Space uses a device-side vault model. You sign in with Supabase Auth using a login password, then unlock a separate vault PIN or passphrase to access encrypted data - the password proves account ownership, the PIN or passphrase protects the content itself.
+ArcheSpace uses a device-side vault model. You sign in with Supabase Auth using a login password, then unlock a separate vault PIN or passphrase to access encrypted data - the password proves account ownership, the PIN or passphrase protects the content itself.
 
 **Encryption**
 
