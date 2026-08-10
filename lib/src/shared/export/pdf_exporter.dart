@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
@@ -55,6 +56,26 @@ class PdfExporter {
       case 'markdown':
         final text = (c['text'] ?? '').toString();
         return pw.Text(text.isEmpty ? '(empty)' : text);
+      case 'code':
+        final code = (c['code'] ?? '').toString();
+        if (code.isEmpty) return pw.Text('(empty)');
+        return pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(8),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey100,
+            border: pw.Border.all(color: PdfColors.grey400),
+            borderRadius: pw.BorderRadius.circular(4),
+          ),
+          child: pw.Text(
+            code,
+            style: pw.TextStyle(
+              font: pw.Font.courier(),
+              fontSize: 9,
+              lineSpacing: 2,
+            ),
+          ),
+        );
       case 'menu_list':
         return _bullets(c, ordered: false);
       case 'numbered_list':

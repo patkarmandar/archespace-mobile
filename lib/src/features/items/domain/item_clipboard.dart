@@ -4,6 +4,7 @@ import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 bool isCopyableType(String type) => const {
   'textbox',
   'markdown',
+  'code',
   'menu_list',
   'numbered_list',
   'checkbox_list',
@@ -20,6 +21,8 @@ String itemClipboardText(SpaceItem item) {
     case 'textbox':
     case 'markdown':
       return (c['text'] ?? '').toString();
+    case 'code':
+      return (c['code'] ?? '').toString();
     case 'menu_list':
     case 'checkbox_list':
       return _list(c, ordered: false);

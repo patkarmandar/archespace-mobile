@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:highlight/highlight.dart' show highlight;
 
 import 'package:archespace_mobile/src/features/items/domain/item_clipboard.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
@@ -263,6 +265,8 @@ class _ItemBody extends StatelessWidget {
         return md.isEmpty
             ? const _Empty()
             : MarkdownBody(data: md, selectable: false);
+      case 'code':
+        return _Code(code: (c['code'] ?? '').toString());
       case 'menu_list':
         return _ListView(items: _listTexts(c), ordered: false);
       case 'numbered_list':
@@ -417,6 +421,97 @@ class _Masked extends StatelessWidget {
     );
   }
 }
+
+/// Read-only code preview with auto-detected syntax highlighting. The global
+/// `highlight` instance registers all languages, so `autoDetection` works with
+/// no language picker; when nothing is detected it falls back to plain mono.
+class _Code extends StatelessWidget {
+  const _Code({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    if (code.trim().isEmpty) return const _Empty();
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final bg = dark ? const Color(0xFF161A22) : const Color(0xFFF6F8FA);
+    final baseColor = dark ? const Color(0xFFD5DAE2) : const Color(0xFF24292E);
+    const mono = TextStyle(
+      fontFamily: 'monospace',
+      fontSize: 12.5,
+      height: 1.5,
+    );
+
+    final lang = highlight.parse(code, autoDetection: true).language;
+    final Widget body = (lang == null || lang.isEmpty)
+        ? Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(code, style: mono.copyWith(color: baseColor)),
+          )
+        : HighlightView(
+            code,
+            language: lang,
+            theme: _codeTheme(baseColor),
+            padding: const EdgeInsets.all(12),
+            textStyle: mono,
+          );
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: body,
+        ),
+      ),
+    );
+  }
+}
+
+/// A transparent-background highlight theme (token colours match the web
+/// palette) so the surrounding container colour shows through.
+Map<String, TextStyle> _codeTheme(Color base) => {
+  'root': TextStyle(color: base, backgroundColor: Colors.transparent),
+  'comment': const TextStyle(
+    color: Color(0xFF7D8590),
+    fontStyle: FontStyle.italic,
+  ),
+  'quote': const TextStyle(
+    color: Color(0xFF7D8590),
+    fontStyle: FontStyle.italic,
+  ),
+  'keyword': const TextStyle(color: Color(0xFFA855F7)),
+  'selector-tag': const TextStyle(color: Color(0xFFA855F7)),
+  'literal': const TextStyle(color: Color(0xFFA855F7)),
+  'type': const TextStyle(color: Color(0xFFA855F7)),
+  'name': const TextStyle(color: Color(0xFFA855F7)),
+  'string': const TextStyle(color: Color(0xFF2F9E57)),
+  'regexp': const TextStyle(color: Color(0xFF2F9E57)),
+  'addition': const TextStyle(color: Color(0xFF2F9E57)),
+  'number': const TextStyle(color: Color(0xFFD97706)),
+  'symbol': const TextStyle(color: Color(0xFFD97706)),
+  'bullet': const TextStyle(color: Color(0xFFD97706)),
+  'link': const TextStyle(color: Color(0xFFD97706)),
+  'title': const TextStyle(color: Color(0xFF2563EB)),
+  'built_in': const TextStyle(color: Color(0xFF2563EB)),
+  'attr': const TextStyle(color: Color(0xFF0891B2)),
+  'attribute': const TextStyle(color: Color(0xFF0891B2)),
+  'variable': const TextStyle(color: Color(0xFF0891B2)),
+  'template-variable': const TextStyle(color: Color(0xFF0891B2)),
+  'tag': const TextStyle(color: Color(0xFFE11D48)),
+  'selector-id': const TextStyle(color: Color(0xFFE11D48)),
+  'selector-class': const TextStyle(color: Color(0xFFE11D48)),
+  'deletion': const TextStyle(color: Color(0xFFE11D48)),
+  'meta': const TextStyle(color: Color(0xFF8B5CF6)),
+  'emphasis': const TextStyle(fontStyle: FontStyle.italic),
+  'strong': const TextStyle(fontWeight: FontWeight.w600),
+};
 
 class _TableView extends StatelessWidget {
   const _TableView({required this.columns, required this.rows});

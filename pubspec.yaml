@@ -19,6 +19,9 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   # Markdown rendering for the Markdown item type.
   flutter_markdown: ^0.7.4
+  # Syntax highlighting for the Code item type (auto-detects the language).
+  flutter_highlight: ^0.7.0
+  highlight: ^0.7.0
   # Local filesystem path for the offline (ciphertext) cache.
   path_provider: ^2.1.4
   # Persisted appearance preferences (theme mode + accent).

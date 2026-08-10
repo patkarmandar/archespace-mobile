@@ -35,6 +35,13 @@ const List<ItemTypeDef> kItemTypes = [
     editable: true,
   ),
   ItemTypeDef(
+    type: 'code',
+    label: 'Code',
+    description: 'Code snippet with syntax highlighting',
+    icon: Icons.data_object,
+    editable: true,
+  ),
+  ItemTypeDef(
     type: 'menu_list',
     label: 'List',
     description: 'Simple bullet list',
@@ -100,6 +107,8 @@ Map<String, dynamic> defaultContentFor(String type) {
     case 'textbox':
     case 'markdown':
       return {'text': ''};
+    case 'code':
+      return {'code': ''};
     case 'menu_list':
     case 'numbered_list':
     case 'card_list':

@@ -229,6 +229,8 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
       case 'textbox':
       case 'markdown':
         return _NoteEditor(content: _content);
+      case 'code':
+        return _CodeEditor(content: _content);
       case 'menu_list':
         return _ListEditor(content: _content, variant: _ListVariant.bullet);
       case 'numbered_list':
@@ -289,6 +291,61 @@ class _NoteEditorState extends State<_NoteEditor> {
       decoration: const InputDecoration(
         hintText: 'Start writing…',
         border: InputBorder.none,
+      ),
+    );
+  }
+}
+
+/// Plain monospace, tab-friendly editor for the `code` item type
+/// (`{ code: "…" }`). Editing is unstyled monospace; syntax highlighting is
+/// applied in the read view (item card), where the language is auto-detected.
+class _CodeEditor extends StatefulWidget {
+  const _CodeEditor({required this.content});
+
+  final Map<String, dynamic> content;
+
+  @override
+  State<_CodeEditor> createState() => _CodeEditorState();
+}
+
+class _CodeEditorState extends State<_CodeEditor> {
+  late final TextEditingController _code = TextEditingController(
+    text: (widget.content['code'] ?? '').toString(),
+  );
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: TextField(
+        controller: _code,
+        onChanged: (value) => widget.content['code'] = value,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        keyboardType: TextInputType.multiline,
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 13,
+          height: 1.5,
+        ),
+        decoration: const InputDecoration(
+          hintText: 'Paste or write code…',
+          border: InputBorder.none,
+          isCollapsed: true,
+        ),
       ),
     );
   }
