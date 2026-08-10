@@ -396,7 +396,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
   Widget _buildSearchBar(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
       child: Material(
         color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(28),
@@ -430,20 +430,24 @@ class _SpacesScreenState extends State<SpacesScreen> {
   Widget _buildSpacesHeader(BuildContext context, int count) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 4, top: 4, bottom: 4),
+      padding: const EdgeInsets.only(left: 16, right: 4, top: 2, bottom: 4),
       child: Row(
         children: [
-          Text(
-            'Spaces',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '· $count',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          Text.rich(
+            TextSpan(
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              children: [
+                const TextSpan(text: 'Spaces'),
+                TextSpan(
+                  text: '  ·  $count',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
           ),
           const Spacer(),
