@@ -399,14 +399,15 @@ class _SpacesScreenState extends State<SpacesScreen> {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Material(
         color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(28),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
+          borderRadius: BorderRadius.circular(28),
           onTap: () => Navigator.of(
             context,
           ).push(MaterialPageRoute<void>(builder: (_) => const SearchScreen())),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Row(
               children: [
                 Icon(Icons.search, size: 20, color: scheme.onSurfaceVariant),
