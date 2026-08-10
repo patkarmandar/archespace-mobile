@@ -440,7 +440,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            '$count',
+            '· $count',
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
