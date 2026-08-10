@@ -26,6 +26,7 @@ class ItemCard extends StatefulWidget {
     this.selectMode = false,
     this.selected = false,
     this.onSelectToggle,
+    this.margin,
   });
 
   final SpaceItem item;
@@ -39,6 +40,7 @@ class ItemCard extends StatefulWidget {
   final bool selectMode;
   final bool selected;
   final VoidCallback? onSelectToggle;
+  final EdgeInsetsGeometry? margin;
 
   @override
   State<ItemCard> createState() => _ItemCardState();
@@ -67,7 +69,9 @@ class _ItemCardState extends State<ItemCard> {
     final accent = selected || item.pinned;
     final borderColor = accent ? scheme.primary : scheme.outlineVariant;
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin:
+          widget.margin ??
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       clipBehavior: Clip.antiAlias,
       color: accent
           ? Color.alphaBlend(

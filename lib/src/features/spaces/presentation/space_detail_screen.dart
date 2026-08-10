@@ -42,6 +42,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
   bool _selectMode = false;
   final Set<String> _selected = {};
   String _sort = kSortDefault;
+  String _view = 'list';
 
   @override
   void initState() {
@@ -49,7 +50,12 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     _load();
     SharedPreferences.getInstance().then((prefs) {
       final saved = prefs.getString('sort_items');
-      if (saved != null && mounted) setState(() => _sort = saved);
+      final view = prefs.getString('items_view');
+      if (!mounted) return;
+      setState(() {
+        if (saved != null) _sort = saved;
+        if (view == 'grid') _view = 'grid';
+      });
     });
     _watcher = TableWatcher(
       channelName: 'items-${widget.space.id}',
@@ -137,6 +143,13 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     setState(() => _sort = value);
     SharedPreferences.getInstance().then(
       (prefs) => prefs.setString('sort_items', value),
+    );
+  }
+
+  void _setView(String value) {
+    setState(() => _view = value);
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setString('items_view', value),
     );
   }
 
@@ -448,6 +461,17 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
               actions: [
                 if (hasItems)
                   IconButton(
+                    onPressed: () =>
+                        _setView(_view == 'grid' ? 'list' : 'grid'),
+                    icon: Icon(
+                      _view == 'grid'
+                          ? Icons.view_agenda_outlined
+                          : Icons.grid_view_outlined,
+                    ),
+                    tooltip: _view == 'grid' ? 'List view' : 'Grid view',
+                  ),
+                if (hasItems)
+                  IconButton(
                     onPressed: _enterSelect,
                     icon: const Icon(Icons.checklist),
                     tooltip: 'Select',
@@ -542,6 +566,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
       createdAt: (i) => i.createdAt,
       pinned: (i) => i.pinned,
     );
+    if (_view == 'grid') return _grid(items);
     return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 8, bottom: 88),
@@ -564,22 +589,62 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           ),
           child: KeyedSubtree(
             key: isFocus ? _focusKey : null,
-            child: ItemCard(
-              item: item,
-              selectMode: _selectMode,
-              selected: _selected.contains(item.id),
-              onSelectToggle: () => _toggleSelect(item.id),
-              onTap: isEditableType(item.type) ? () => _editItem(item) : null,
-              onTogglePin: () => _togglePinItem(item),
-              onDuplicate: () => _duplicateItem(item),
-              onMove: () => _moveItem(item),
-              onArchive: () => _archiveItem(item),
-              onExport: () => _exportItem(item),
-              onDelete: () => _deleteItem(item),
-            ),
+            child: _itemCard(item),
           ),
         );
       },
     );
   }
+
+  /// Two-column masonry grid: items are distributed round-robin so each keeps
+  /// its natural height (no reordering in this view).
+  Widget _grid(List<SpaceItem> items) {
+    final columns = <List<Widget>>[<Widget>[], <Widget>[]];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final isFocus = item.id == widget.focusItemId;
+      columns[i % 2].add(
+        AnimatedContainer(
+          key: ValueKey(item.id),
+          duration: const Duration(milliseconds: 300),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: _flashId == item.id
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+                : Colors.transparent,
+          ),
+          child: KeyedSubtree(
+            key: isFocus ? _focusKey : null,
+            child: _itemCard(item, margin: const EdgeInsets.all(4)),
+          ),
+        ),
+      );
+    }
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(6, 8, 6, 88),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Column(children: columns[0])),
+          Expanded(child: Column(children: columns[1])),
+        ],
+      ),
+    );
+  }
+
+  Widget _itemCard(SpaceItem item, {EdgeInsetsGeometry? margin}) => ItemCard(
+    item: item,
+    margin: margin,
+    selectMode: _selectMode,
+    selected: _selected.contains(item.id),
+    onSelectToggle: () => _toggleSelect(item.id),
+    onTap: isEditableType(item.type) ? () => _editItem(item) : null,
+    onTogglePin: () => _togglePinItem(item),
+    onDuplicate: () => _duplicateItem(item),
+    onMove: () => _moveItem(item),
+    onArchive: () => _archiveItem(item),
+    onExport: () => _exportItem(item),
+    onDelete: () => _deleteItem(item),
+  );
 }

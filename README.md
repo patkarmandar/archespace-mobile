@@ -25,26 +25,28 @@ It talks to the **same Supabase backend** as the web app and shares the same cli
 ## Features
 
 - Multiple spaces for separating ideas, projects, plans, references, and personal systems.
-- Multiple item types for different kinds of content, including PIN-protected secrets (see [Item types](#item-types)).
+- Multiple item types for different kinds of content (see [Item types](#item-types)).
 - Space tags and color, shown on the spaces list.
 - Pinning for important spaces and items.
 - Drag-and-drop reordering for spaces and page items.
 - Sort spaces and page items by default order, name, or newest, remembered per view.
+- Grid or list view for items inside a space, remembered (grid uses a two-column masonry so items keep their natural height).
+- Collapse or expand individual item cards to hide their body.
 - Unified search across spaces, tags, and item content, with jump-to-item.
+- One-tap copy of any item's content to the clipboard as clean plain text.
 - Bulk actions for spaces and items.
 - Duplicate, move, archive, restore, and delete workflows.
-- Recycle bin with restore and permanent delete.
 - Archive area for hiding content without deleting it.
-- One-tap copy of any item's content to the clipboard as clean plain text.
+- Recycle bin with restore and permanent delete.
 - Export a whole space or a single item to PDF via the native share/print sheet.
 - Backup import/export to JSON, in the same format as the web app.
-- Realtime sync and pull-to-refresh across spaces and items.
-- Works offline: an encrypted read cache plus a durable write queue that replays edits when you reconnect.
 - Appearance settings with `System`, `Dark`, and `Light` theme modes and multiple accent colors, synced to your account.
 - Private, encrypted vault to keep your content secure (see [Security model](#security-model)).
 - Biometric unlock (fingerprint or face) with the wrapped key kept in the platform keystore.
 - Account management: create account, change email, change login password, forgot password, and permanent account deletion.
 - Vault management: change PIN with the current PIN, reset PIN with a recovery code, and generate a new recovery code.
+- Realtime sync and pull-to-refresh across spaces and items.
+- Works offline: an encrypted read cache plus a durable write queue that replays edits when you reconnect.
 - Single-user by default, with an optional multi-user (sign-up) mode.
 - Verifiable build hash shown in Settings, linking to the exact source commit on GitHub.
 
@@ -78,6 +80,7 @@ ArcheSpace uses a device-side vault model. You sign in with Supabase Auth using 
 - The unlocked vault key is held in memory for the running process. Only ciphertext is ever written to disk - the offline read cache and write queue store encrypted rows.
 - With biometric unlock enabled, the wrapped master key is stored in the Android Keystore / iOS Keychain and released only after a successful fingerprint or face check.
 - The vault can be locked manually from Settings, and is cleared on sign out.
+- Signing out ends only this device's session by default; Settings also offers "Sign out of all devices" to revoke every session at once.
 - Supabase Row Level Security restricts each user to their own rows.
 
 **Recovery**
@@ -196,9 +199,10 @@ You can also run the workflow manually from the Actions tab.
 | Secure storage | `flutter_secure_storage` (Android Keystore / iOS Keychain) |
 | Biometrics | `local_auth` |
 | Markdown | `flutter_markdown` |
+| Syntax highlighting | `flutter_highlight` + `highlight` (automatic language detection for the Code item type) |
 | PDF export | `pdf` + `printing` (native share/print sheet) |
 | Files | `file_picker` (JSON backup), `path_provider` (offline cache) |
-| Preferences | `shared_preferences` (theme + accent) |
+| Preferences | `shared_preferences` (theme, accent, sort, and item view) |
 | Links | `url_launcher` (build-commit link) |
 | CI | GitHub Actions (stamped release APK) |
 
