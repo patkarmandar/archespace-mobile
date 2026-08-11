@@ -32,14 +32,16 @@ class SpaceRepository {
           .isFilter('archived_at', null)
           .order('pinned', ascending: false)
           .order('position', ascending: true)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 8));
 
       // Per-space item counts (lightweight: no titles/content).
       final itemRows = await _client
           .from('space_items')
           .select('space_id, pinned')
           .isFilter('deleted_at', null)
-          .isFilter('archived_at', null);
+          .isFilter('archived_at', null)
+          .timeout(const Duration(seconds: 8));
       final total = <String, int>{};
       final pinned = <String, int>{};
       for (final r in itemRows) {

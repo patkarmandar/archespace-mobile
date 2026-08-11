@@ -29,12 +29,24 @@ class VaultService {
   static const String _metaCacheKey = 'user_encryption';
 
   Future<bool> hasVault(String userId) async {
-    final row = await _client
-        .from('user_encryption')
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-    return row != null;
+    // If unlock metadata is cached, a vault exists - answer instantly and skip
+    // the network so launch never hangs on a stalled request when offline.
+    final cached = await CacheStore.read(_metaCacheKey);
+    if (cached is Map) return true;
+    try {
+      final row = await _client
+          .from('user_encryption')
+          .select('user_id')
+          .eq('user_id', userId)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 8));
+      return row != null;
+    } catch (_) {
+      // Unreachable and nothing cached: assume a vault exists so we show the
+      // unlock screen (which surfaces a clear offline message) instead of the
+      // setup screen or an endless spinner.
+      return true;
+    }
   }
 
   /// Load the unlock metadata (salt, key_check, wrapped_key). Fetches it from

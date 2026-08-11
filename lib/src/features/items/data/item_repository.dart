@@ -33,7 +33,8 @@ class ItemRepository {
           .isFilter('deleted_at', null)
           .isFilter('archived_at', null)
           .order('pinned', ascending: false)
-          .order('position', ascending: true);
+          .order('position', ascending: true)
+          .timeout(const Duration(seconds: 8));
       await CacheStore.write(cacheKey, rows);
       WriteQueue.instance.flush(); // network is up: drain any queued writes
     } catch (_) {
