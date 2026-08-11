@@ -166,45 +166,44 @@ class SpaceCard extends StatelessWidget {
                             border: Border.all(color: scheme.outlineVariant),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_horiz, size: 16),
-                            iconSize: 16,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 30,
-                              minHeight: 30,
+                          child: SizedBox(
+                            height: 28,
+                            width: 28,
+                            child: PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_horiz, size: 16),
+                              iconSize: 16,
+                              padding: EdgeInsets.zero,
+                              tooltip: 'Space actions',
+                              onSelected: (value) {
+                                if (value == 'pin') onTogglePin();
+                                if (value == 'edit') onEdit();
+                                if (value == 'duplicate') onDuplicate();
+                                if (value == 'archive') onArchive();
+                                if (value == 'delete') onDelete();
+                              },
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  value: 'pin',
+                                  child: Text(space.pinned ? 'Unpin' : 'Pin'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'duplicate',
+                                  child: Text('Duplicate'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'archive',
+                                  child: Text('Archive'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
+                                ),
+                              ],
                             ),
-                            splashRadius: 18,
-                            tooltip: 'Space actions',
-                            onSelected: (value) {
-                              if (value == 'pin') onTogglePin();
-                              if (value == 'edit') onEdit();
-                              if (value == 'duplicate') onDuplicate();
-                              if (value == 'archive') onArchive();
-                              if (value == 'delete') onDelete();
-                            },
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'pin',
-                                child: Text(space.pinned ? 'Unpin' : 'Pin'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Text('Edit'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'duplicate',
-                                child: Text('Duplicate'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'archive',
-                                child: Text('Archive'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text('Delete'),
-                              ),
-                            ],
                           ),
                         ),
                     ],
