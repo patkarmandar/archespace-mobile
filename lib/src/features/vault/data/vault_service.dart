@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:archespace_mobile/src/features/vault/domain/recovery_code.dart';
 import 'package:archespace_mobile/src/features/vault/domain/vault_pin.dart';
 import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
+import 'package:archespace_mobile/src/shared/data/cache_store.dart';
 
 class VaultException implements Exception {
   VaultException(this.message);
@@ -25,6 +26,7 @@ class VaultService {
 
   static const String _checkPlaintext = 'ARCHE_VAULT_V1_OK';
   static const String _vaultFormat = 'pin_wrapped';
+  static const String _metaCacheKey = 'user_encryption';
 
   Future<bool> hasVault(String userId) async {
     final row = await _client
@@ -35,15 +37,37 @@ class VaultService {
     return row != null;
   }
 
+  /// Load the unlock metadata (salt, key_check, wrapped_key). Fetches it from
+  /// Supabase and caches it locally so the vault can be unlocked offline; when
+  /// the network is unavailable, falls back to the cached copy. The cached data
+  /// is ciphertext plus a public salt - the same values the server stores - so
+  /// caching it does not weaken the zero-knowledge model (the PIN is still
+  /// required to derive the unwrapping key).
+  Future<Map<String, dynamic>?> _loadUnlockMeta(String userId) async {
+    try {
+      final meta = await _client
+          .from('user_encryption')
+          .select('salt, key_check, wrapped_key')
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (meta != null) await CacheStore.write(_metaCacheKey, meta);
+      return meta;
+    } catch (_) {
+      final cached = await CacheStore.read(_metaCacheKey);
+      if (cached is Map) return Map<String, dynamic>.from(cached);
+      throw VaultException(
+        "Can't reach the server, and there's no offline vault data on this "
+        'device yet. Connect to the internet once to enable offline unlock.',
+      );
+    }
+  }
+
   /// Derive the PIN key, unwrap the master key, and verify it. Returns the raw
   /// master key on success; throws [VaultException] on a wrong PIN / no vault.
+  /// Works offline once the metadata has been cached by a prior online unlock
+  /// or vault setup.
   Future<Uint8List> unlock(String userId, String pin) async {
-    final meta = await _client
-        .from('user_encryption')
-        .select('salt, key_check, wrapped_key')
-        .eq('user_id', userId)
-        .maybeSingle();
-
+    final meta = await _loadUnlockMeta(userId);
     if (meta == null) {
       throw VaultException('No vault PIN is configured for this account.');
     }
@@ -258,5 +282,12 @@ class VaultService {
     }
 
     await _client.from('user_encryption').upsert(payload);
+
+    // Keep the offline unlock cache in sync with the freshly wrapped key.
+    await CacheStore.write(_metaCacheKey, {
+      'salt': payload['salt'],
+      'key_check': payload['key_check'],
+      'wrapped_key': payload['wrapped_key'],
+    });
   }
 }
