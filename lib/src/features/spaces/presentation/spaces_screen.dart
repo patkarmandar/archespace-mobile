@@ -31,14 +31,20 @@ class _SpacesScreenState extends State<SpacesScreen> {
   bool _selectMode = false;
   final Set<String> _selected = {};
   String _sort = kSortDefault;
+  String _view = 'list';
 
   @override
   void initState() {
     super.initState();
     _load();
     SharedPreferences.getInstance().then((prefs) {
-      final saved = prefs.getString('sort_spaces');
-      if (saved != null && mounted) setState(() => _sort = saved);
+      final sort = prefs.getString('sort_spaces');
+      final view = prefs.getString('spaces_view');
+      if (!mounted) return;
+      setState(() {
+        if (sort != null) _sort = sort;
+        if (view == 'grid') _view = 'grid';
+      });
     });
     _watcher = TableWatcher(
       channelName: 'spaces-realtime',
@@ -53,6 +59,15 @@ class _SpacesScreenState extends State<SpacesScreen> {
       (prefs) => prefs.setString('sort_spaces', value),
     );
   }
+
+  void _setView(String value) {
+    setState(() => _view = value);
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setString('spaces_view', value),
+    );
+  }
+
+  bool get _canReorder => !_selectMode && !_offline && _sort == kSortDefault;
 
   @override
   void dispose() {
@@ -142,6 +157,20 @@ class _SpacesScreenState extends State<SpacesScreen> {
       _snack("Couldn't save the new order.");
       if (mounted) _load();
     }
+  }
+
+  /// Reorder by space id (used by the grid's drag-and-drop): move [fromId] into
+  /// [toId]'s slot and persist the new order.
+  void _moveSpaceById(String fromId, String toId) {
+    if (fromId == toId) return;
+    final list = List<Space>.of(_spaces ?? const []);
+    final from = list.indexWhere((s) => s.id == fromId);
+    final to = list.indexWhere((s) => s.id == toId);
+    if (from < 0 || to < 0) return;
+    final moved = list.removeAt(from);
+    list.insert(from < to ? to - 1 : to, moved);
+    setState(() => _spaces = list);
+    _persistOrder(list);
   }
 
   Future<void> _runBulk(Future<void> Function(SpaceRepository) op) async {
@@ -455,6 +484,15 @@ class _SpacesScreenState extends State<SpacesScreen> {
           ),
           const Spacer(),
           IconButton(
+            onPressed: () => _setView(_view == 'grid' ? 'list' : 'grid'),
+            icon: Icon(
+              _view == 'grid'
+                  ? Icons.view_agenda_outlined
+                  : Icons.grid_view_outlined,
+            ),
+            tooltip: _view == 'grid' ? 'List view' : 'Grid view',
+          ),
+          IconButton(
             onPressed: _enterSelect,
             icon: const Icon(Icons.checklist),
             tooltip: 'Select',
@@ -482,33 +520,93 @@ class _SpacesScreenState extends State<SpacesScreen> {
       createdAt: (s) => s.createdAt,
       pinned: (s) => s.pinned,
     );
+    if (_view == 'grid') return _grid(spaces);
     return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 4, bottom: 88),
-      buildDefaultDragHandles:
-          !_selectMode && !_offline && _sort == kSortDefault,
+      buildDefaultDragHandles: _canReorder,
       onReorderItem: _onReorder,
       itemCount: spaces.length,
-      itemBuilder: (context, index) {
-        final space = spaces[index];
-        return SpaceCard(
-          key: ValueKey(space.id),
-          space: space,
-          selectMode: _selectMode,
-          selected: _selected.contains(space.id),
-          onSelectToggle: () => _toggleSelect(space.id),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => SpaceDetailScreen(space: space),
+      itemBuilder: (context, index) => KeyedSubtree(
+        key: ValueKey(spaces[index].id),
+        child: _spaceCard(spaces[index]),
+      ),
+    );
+  }
+
+  /// Two-column masonry grid. Cards keep their natural height (round-robin
+  /// distribution); when reordering is allowed each is a long-press draggable
+  /// and a drop target, persisting the new order like the list view.
+  Widget _grid(List<Space> spaces) {
+    final canReorder = _canReorder;
+    final columns = <List<Widget>>[<Widget>[], <Widget>[]];
+    for (var i = 0; i < spaces.length; i++) {
+      columns[i % 2].add(_gridCard(spaces[i], canReorder));
+    }
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(6, 6, 6, 88),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Column(children: columns[0])),
+          Expanded(child: Column(children: columns[1])),
+        ],
+      ),
+    );
+  }
+
+  Widget _gridCard(Space space, bool canReorder) {
+    final card = _spaceCard(space, margin: const EdgeInsets.all(4));
+    if (!canReorder) {
+      return KeyedSubtree(key: ValueKey(space.id), child: card);
+    }
+    return DragTarget<String>(
+      key: ValueKey(space.id),
+      onWillAcceptWithDetails: (d) => d.data != space.id,
+      onAcceptWithDetails: (d) => _moveSpaceById(d.data, space.id),
+      builder: (context, candidate, rejected) {
+        final over = candidate.isNotEmpty;
+        return LongPressDraggable<String>(
+          data: space.id,
+          feedback: Material(
+            color: Colors.transparent,
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width / 2 - 16,
+              child: Opacity(opacity: 0.95, child: card),
             ),
           ),
-          onTogglePin: () => _togglePinSpace(space),
-          onEdit: () => _editSpace(space),
-          onDuplicate: () => _duplicateSpace(space),
-          onArchive: () => _archiveSpace(space),
-          onDelete: () => _deleteSpace(space),
+          childWhenDragging: Opacity(opacity: 0.3, child: card),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: over
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    )
+                  : null,
+            ),
+            child: card,
+          ),
         );
       },
     );
   }
+
+  Widget _spaceCard(Space space, {EdgeInsetsGeometry? margin}) => SpaceCard(
+    space: space,
+    margin: margin,
+    selectMode: _selectMode,
+    selected: _selected.contains(space.id),
+    onSelectToggle: () => _toggleSelect(space.id),
+    onTap: () => Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => SpaceDetailScreen(space: space)),
+    ),
+    onTogglePin: () => _togglePinSpace(space),
+    onEdit: () => _editSpace(space),
+    onDuplicate: () => _duplicateSpace(space),
+    onArchive: () => _archiveSpace(space),
+    onDelete: () => _deleteSpace(space),
+  );
 }

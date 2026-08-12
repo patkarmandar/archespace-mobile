@@ -21,6 +21,7 @@ class SpaceCard extends StatelessWidget {
     this.selectMode = false,
     this.selected = false,
     this.onSelectToggle,
+    this.margin,
   });
 
   final Space space;
@@ -33,6 +34,7 @@ class SpaceCard extends StatelessWidget {
   final bool selectMode;
   final bool selected;
   final VoidCallback? onSelectToggle;
+  final EdgeInsetsGeometry? margin;
 
   String get _countLabel =>
       '${space.itemCount} ${space.itemCount == 1 ? 'item' : 'items'}';
@@ -50,7 +52,8 @@ class SpaceCard extends StatelessWidget {
     return Stack(
       children: [
         Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          margin:
+              margin ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -219,10 +222,9 @@ class SpaceCard extends StatelessWidget {
           Positioned.fill(
             child: IgnorePointer(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding:
+                    margin ??
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: CustomPaint(
                   painter: _TopBorderPainter(color: topColor, radius: 16),
                 ),
