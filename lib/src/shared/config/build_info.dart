@@ -1,14 +1,7 @@
-/// Build provenance, injected at compile time via `--dart-define`.
-///
-/// Surfacing the commit hash lets users verify the app they installed matches
-/// the audited, open-source release. Mirrors the web `buildInfo.js`. Pass the
-/// values at build time, e.g.:
-///
-///   flutter build apk --release \
-///     --dart-define-from-file=env.json \
-///     --dart-define=APP_VERSION=$(git describe --tags --always) \
-///     --dart-define=BUILD_HASH=$(git rev-parse --short HEAD) \
-///     --dart-define=BUILD_TIME=$(git log -1 --format=%cI)
+/// Build provenance, injected at compile time via `--dart-define` (mirrors the
+/// web `buildInfo.js`). Surfacing the commit hash lets users verify the
+/// installed app matches the audited, open-source release. See the README for
+/// the build command.
 class BuildInfo {
   const BuildInfo._();
 

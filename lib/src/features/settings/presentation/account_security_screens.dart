@@ -21,9 +21,7 @@ String _authMessage(Object error) {
   return 'Something went wrong. Check your connection and try again.';
 }
 
-// ---------------------------------------------------------------------------
 // Change email (two steps: password check + code sent to the current address).
-// ---------------------------------------------------------------------------
 
 class ChangeEmailScreen extends StatefulWidget {
   const ChangeEmailScreen({super.key});
@@ -204,9 +202,7 @@ class _ChangeEmailScreenState extends State<ChangeEmailScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Change login password.
-// ---------------------------------------------------------------------------
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -383,9 +379,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Change vault PIN with the current PIN.
-// ---------------------------------------------------------------------------
 
 class ChangePinScreen extends StatefulWidget {
   const ChangePinScreen({super.key});
@@ -510,9 +504,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Generate / replace the recovery code with the current PIN.
-// ---------------------------------------------------------------------------
 
 class SetupRecoveryScreen extends StatefulWidget {
   const SetupRecoveryScreen({super.key});
@@ -594,9 +586,7 @@ class _SetupRecoveryScreenState extends State<SetupRecoveryScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Reset vault PIN with a recovery code.
-// ---------------------------------------------------------------------------
 
 class ResetPinScreen extends StatefulWidget {
   const ResetPinScreen({super.key});
@@ -739,9 +729,7 @@ class _ResetPinScreenState extends State<ResetPinScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Delete account permanently.
-// ---------------------------------------------------------------------------
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -919,9 +907,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Shared widgets.
-// ---------------------------------------------------------------------------
 
 class _ObscureField extends StatelessWidget {
   const _ObscureField({

@@ -291,7 +291,7 @@ class _ItemBody extends StatelessWidget {
   }
 }
 
-// ── Renderers ─────────────────────────────────────────────
+// Renderers
 
 class _ListView extends StatelessWidget {
   const _ListView({required this.items, required this.ordered});
@@ -637,7 +637,7 @@ class _Empty extends StatelessWidget {
   }
 }
 
-// ── Content extractors ────────────────────────────────────
+// Content extractors
 
 List<String> _listTexts(Map<String, dynamic> c) =>
     ((c['items'] as List?) ?? const [])
