@@ -307,7 +307,7 @@ class _ListView extends StatelessWidget {
       children: [
         for (var i = 0; i < items.length; i++)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(vertical: 1),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -335,7 +335,7 @@ class _Checklist extends StatelessWidget {
         for (final raw in items)
           if (raw is Map)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
+              padding: const EdgeInsets.symmetric(vertical: 1),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

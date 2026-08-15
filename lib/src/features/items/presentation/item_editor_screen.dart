@@ -455,7 +455,7 @@ class _ListEditorState extends State<_ListEditor> {
               final item = _items[index];
               return Padding(
                 key: ValueKey(item['id']),
-                padding: const EdgeInsets.symmetric(vertical: 2),
+                padding: const EdgeInsets.symmetric(vertical: 1),
                 child: Row(
                   children: [
                     _leading(index, item),
