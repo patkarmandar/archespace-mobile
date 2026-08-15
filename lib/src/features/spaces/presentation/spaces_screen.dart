@@ -484,6 +484,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
           ),
           const Spacer(),
           IconButton(
+            visualDensity: VisualDensity.compact,
             onPressed: () => _setView(_view == 'grid' ? 'list' : 'grid'),
             icon: Icon(
               _view == 'grid'
@@ -493,6 +494,7 @@ class _SpacesScreenState extends State<SpacesScreen> {
             tooltip: _view == 'grid' ? 'List view' : 'Grid view',
           ),
           IconButton(
+            visualDensity: VisualDensity.compact,
             onPressed: _enterSelect,
             icon: const Icon(Icons.checklist),
             tooltip: 'Select',

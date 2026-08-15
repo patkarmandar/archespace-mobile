@@ -461,6 +461,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
               actions: [
                 if (hasItems)
                   IconButton(
+                    visualDensity: VisualDensity.compact,
                     onPressed: () =>
                         _setView(_view == 'grid' ? 'list' : 'grid'),
                     icon: Icon(
@@ -472,6 +473,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
                   ),
                 if (hasItems)
                   IconButton(
+                    visualDensity: VisualDensity.compact,
                     onPressed: _enterSelect,
                     icon: const Icon(Icons.checklist),
                     tooltip: 'Select',
@@ -479,6 +481,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
                 if (hasItems) SortMenu(value: _sort, onChanged: _setSort),
                 if (hasItems)
                   IconButton(
+                    visualDensity: VisualDensity.compact,
                     onPressed: _exportSpace,
                     icon: const Icon(Icons.picture_as_pdf_outlined),
                     tooltip: 'Export PDF',
