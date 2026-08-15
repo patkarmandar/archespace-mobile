@@ -618,7 +618,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           ),
           child: KeyedSubtree(
             key: isFocus ? _focusKey : null,
-            child: _itemCard(item, margin: const EdgeInsets.all(4)),
+            child: _itemCard(item, margin: const EdgeInsets.all(4), grid: true),
           ),
         ),
       );
@@ -636,9 +636,14 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     );
   }
 
-  Widget _itemCard(SpaceItem item, {EdgeInsetsGeometry? margin}) => ItemCard(
+  Widget _itemCard(
+    SpaceItem item, {
+    EdgeInsetsGeometry? margin,
+    bool grid = false,
+  }) => ItemCard(
     item: item,
     margin: margin,
+    grid: grid,
     selectMode: _selectMode,
     selected: _selected.contains(item.id),
     onSelectToggle: () => _toggleSelect(item.id),

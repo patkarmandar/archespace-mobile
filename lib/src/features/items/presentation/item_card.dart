@@ -27,6 +27,7 @@ class ItemCard extends StatefulWidget {
     this.selected = false,
     this.onSelectToggle,
     this.margin,
+    this.grid = false,
   });
 
   final SpaceItem item;
@@ -41,6 +42,10 @@ class ItemCard extends StatefulWidget {
   final bool selected;
   final VoidCallback? onSelectToggle;
   final EdgeInsetsGeometry? margin;
+
+  /// In grid view the type badge is hidden to keep the compact cards clean;
+  /// the list view still shows it.
+  final bool grid;
 
   @override
   State<ItemCard> createState() => _ItemCardState();
@@ -103,7 +108,7 @@ class _ItemCardState extends State<ItemCard> {
                         semanticLabel: 'Pinned',
                       ),
                     ),
-                  if (itemTypeDef(item.type) != null)
+                  if (!widget.grid && itemTypeDef(item.type) != null)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: Container(
