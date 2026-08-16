@@ -202,9 +202,11 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         body: SafeArea(
           top: false,
           child: Padding(
-            // Bottom trimmed to 8 so the trailing add button (list/card/table
-            // editors) sits a uniform, small distance from the screen edge.
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            // Top trimmed to 8 so the title sits a uniform, small distance
+            // below the app bar (matching the divider gap beneath it); bottom
+            // trimmed to 8 so the trailing add button (list/card/table editors)
+            // sits a uniform, small distance from the screen edge.
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
