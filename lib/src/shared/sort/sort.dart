@@ -49,25 +49,25 @@ class SortMenu extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       menuPadding: const EdgeInsets.symmetric(vertical: 4),
       itemBuilder: (context) => [
-        CheckedPopupMenuItem(
-          value: kSortDefault,
-          checked: value == kSortDefault,
-          height: 40,
-          child: const Text('Default order'),
-        ),
-        CheckedPopupMenuItem(
-          value: kSortName,
-          checked: value == kSortName,
-          height: 40,
-          child: const Text('Name'),
-        ),
-        CheckedPopupMenuItem(
-          value: kSortNewest,
-          checked: value == kSortNewest,
-          height: 40,
-          child: const Text('Newest'),
-        ),
+        _sortItem(kSortDefault, 'Default order'),
+        _sortItem(kSortName, 'Name'),
+        _sortItem(kSortNewest, 'Newest'),
       ],
+    );
+  }
+
+  /// A compact menu row (matching the 3-dot action menus) with an inline check
+  /// on the active option instead of a bulkier CheckedPopupMenuItem.
+  PopupMenuItem<String> _sortItem(String option, String label) {
+    return PopupMenuItem<String>(
+      value: option,
+      height: 40,
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          if (value == option) const Icon(Icons.check, size: 18),
+        ],
+      ),
     );
   }
 }
