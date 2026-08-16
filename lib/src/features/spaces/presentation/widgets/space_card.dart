@@ -177,6 +177,12 @@ class SpaceCard extends StatelessWidget {
                               iconSize: 16,
                               padding: EdgeInsets.zero,
                               tooltip: 'Space actions',
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              menuPadding: const EdgeInsets.symmetric(
+                                vertical: 4,
+                              ),
                               onSelected: (value) {
                                 if (value == 'pin') onTogglePin();
                                 if (value == 'edit') onEdit();
@@ -186,22 +192,27 @@ class SpaceCard extends StatelessWidget {
                               },
                               itemBuilder: (context) => [
                                 PopupMenuItem(
+                                  height: 40,
                                   value: 'pin',
                                   child: Text(space.pinned ? 'Unpin' : 'Pin'),
                                 ),
                                 const PopupMenuItem(
+                                  height: 40,
                                   value: 'edit',
                                   child: Text('Edit'),
                                 ),
                                 const PopupMenuItem(
+                                  height: 40,
                                   value: 'duplicate',
                                   child: Text('Duplicate'),
                                 ),
                                 const PopupMenuItem(
+                                  height: 40,
                                   value: 'archive',
                                   child: Text('Archive'),
                                 ),
                                 const PopupMenuItem(
+                                  height: 40,
                                   value: 'delete',
                                   child: Text('Delete'),
                                 ),

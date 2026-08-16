@@ -191,6 +191,10 @@ class _ItemCardState extends State<ItemCard> {
                         icon: const Icon(Icons.more_vert, size: 18),
                         padding: EdgeInsets.zero,
                         tooltip: 'Item actions',
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        menuPadding: const EdgeInsets.symmetric(vertical: 4),
                         onSelected: (value) {
                           if (value == 'pin') onTogglePin?.call();
                           if (value == 'duplicate') onDuplicate?.call();
@@ -202,31 +206,37 @@ class _ItemCardState extends State<ItemCard> {
                         itemBuilder: (context) => [
                           if (onTogglePin != null)
                             PopupMenuItem(
+                              height: 40,
                               value: 'pin',
                               child: Text(item.pinned ? 'Unpin' : 'Pin'),
                             ),
                           if (onDuplicate != null)
                             const PopupMenuItem(
+                              height: 40,
                               value: 'duplicate',
                               child: Text('Duplicate'),
                             ),
                           if (onMove != null)
                             const PopupMenuItem(
+                              height: 40,
                               value: 'move',
                               child: Text('Move to space'),
                             ),
                           if (onExport != null)
                             const PopupMenuItem(
+                              height: 40,
                               value: 'export',
                               child: Text('Export PDF'),
                             ),
                           if (onArchive != null)
                             const PopupMenuItem(
+                              height: 40,
                               value: 'archive',
                               child: Text('Archive'),
                             ),
                           if (onDelete != null)
                             const PopupMenuItem(
+                              height: 40,
                               value: 'delete',
                               child: Text('Delete'),
                             ),
