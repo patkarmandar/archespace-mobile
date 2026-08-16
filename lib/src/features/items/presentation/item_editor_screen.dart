@@ -202,7 +202,9 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
         body: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            // Bottom trimmed to 8 so the trailing add button (list/card/table
+            // editors) sits a uniform, small distance from the screen edge.
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -511,6 +513,7 @@ class _ListEditorState extends State<_ListEditor> {
             },
           ),
         ),
+        const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
@@ -677,6 +680,7 @@ class _CardsEditorState extends State<_CardsEditor> {
             },
           ),
         ),
+        const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
@@ -906,6 +910,7 @@ class _TableEditorState extends State<_TableEditor> {
             ),
           ),
         ),
+        const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
