@@ -167,8 +167,9 @@ class VaultService {
   }
 
   /// Unlock with the recovery code, set [newPin], and rotate the recovery code.
-  /// Returns the new recovery code to show once.
-  Future<String> changePinWithRecoveryCode(
+  /// Returns the recovered master key (to unlock the session straight away) and
+  /// the new recovery code to show once. Used by the forgot-PIN flow.
+  Future<({Uint8List masterKey, String recoveryCode})> recoverWithCode(
     String userId,
     String recoveryCode,
     String newPin,
@@ -193,7 +194,18 @@ class VaultService {
     final masterKey = await _unlockWithRecovery(meta, recoveryCode);
     final nextCode = generateRecoveryCode();
     await _persistPinWrapped(userId, newPin, masterKey, recoveryCode: nextCode);
-    return nextCode;
+    return (masterKey: masterKey, recoveryCode: nextCode);
+  }
+
+  /// Unlock with the recovery code, set [newPin], and rotate the recovery code.
+  /// Returns the new recovery code to show once.
+  Future<String> changePinWithRecoveryCode(
+    String userId,
+    String recoveryCode,
+    String newPin,
+  ) async {
+    final result = await recoverWithCode(userId, recoveryCode, newPin);
+    return result.recoveryCode;
   }
 
   Future<Uint8List> _unlockWithPin(
