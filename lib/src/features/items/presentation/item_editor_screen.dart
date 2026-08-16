@@ -425,6 +425,8 @@ class _ListEditorState extends State<_ListEditor> {
           value: (item['checked'] ?? false) == true,
           onChanged: (value) =>
               setState(() => item['checked'] = value ?? false),
+          visualDensity: VisualDensity.compact,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         );
     }
   }
@@ -483,6 +485,12 @@ class _ListEditorState extends State<_ListEditor> {
                       onPressed: () => _remove(index),
                       icon: const Icon(Icons.close, size: 18),
                       tooltip: 'Remove',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     ),
                     ReorderableDragStartListener(
                       index: index,
