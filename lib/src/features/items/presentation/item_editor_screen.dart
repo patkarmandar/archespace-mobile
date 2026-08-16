@@ -212,9 +212,11 @@ class _ItemEditorScreenState extends State<ItemEditorScreen> {
                   decoration: const InputDecoration(
                     hintText: 'Title',
                     border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 4),
                   ),
                 ),
-                const Divider(),
+                const Divider(height: 8),
                 Expanded(child: _buildBody()),
               ],
             ),
