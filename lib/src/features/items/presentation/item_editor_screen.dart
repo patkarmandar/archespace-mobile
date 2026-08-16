@@ -515,6 +515,10 @@ class _ListEditorState extends State<_ListEditor> {
             onPressed: _add,
             icon: const Icon(Icons.add),
             label: const Text('Add item'),
+            style: TextButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
           ),
         ),
       ],
@@ -677,6 +681,10 @@ class _CardsEditorState extends State<_CardsEditor> {
             onPressed: _add,
             icon: const Icon(Icons.add),
             label: const Text('Add card'),
+            style: TextButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
           ),
         ),
       ],
@@ -902,6 +910,10 @@ class _TableEditorState extends State<_TableEditor> {
             onPressed: _addRow,
             icon: const Icon(Icons.add),
             label: const Text('Add row'),
+            style: TextButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
           ),
         ),
       ],
