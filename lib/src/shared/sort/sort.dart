@@ -46,20 +46,25 @@ class SortMenu extends StatelessWidget {
       icon: const Icon(Icons.sort),
       tooltip: 'Sort',
       onSelected: onChanged,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      menuPadding: const EdgeInsets.symmetric(vertical: 4),
       itemBuilder: (context) => [
         CheckedPopupMenuItem(
           value: kSortDefault,
           checked: value == kSortDefault,
+          height: 40,
           child: const Text('Default order'),
         ),
         CheckedPopupMenuItem(
           value: kSortName,
           checked: value == kSortName,
+          height: 40,
           child: const Text('Name'),
         ),
         CheckedPopupMenuItem(
           value: kSortNewest,
           checked: value == kSortNewest,
+          height: 40,
           child: const Text('Newest'),
         ),
       ],
