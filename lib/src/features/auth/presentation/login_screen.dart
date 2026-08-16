@@ -138,14 +138,16 @@ class _LoginScreenState extends State<LoginScreen> {
         // Signed in immediately; the root gate takes over to set up the vault.
         return;
       }
-      // Email confirmation required before the account can sign in.
+      // Email confirmation required before the account can sign in. This
+      // message is shown identically whether the email is new or already
+      // registered, so it never reveals which - preventing account enumeration.
       setState(() {
         _mode = _Mode.signIn;
         _password.clear();
         _confirm.clear();
         _info =
-            'Account created. Check your email to confirm your address, '
-            'then sign in.';
+            'Check your email to confirm your address and finish signing up. '
+            'Already have an account? Sign in instead.';
       });
     } on AuthException catch (e) {
       setState(() => _error = e.message);
