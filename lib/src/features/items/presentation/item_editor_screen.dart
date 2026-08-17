@@ -376,6 +376,7 @@ class _ListEditor extends StatefulWidget {
 class _ListEditorState extends State<_ListEditor> {
   late final List<Map<String, dynamic>> _items;
   final Map<String, TextEditingController> _controllers = {};
+  final Map<String, FocusNode> _focusNodes = {};
 
   @override
   void initState() {
@@ -395,6 +396,9 @@ class _ListEditorState extends State<_ListEditor> {
     for (final controller in _controllers.values) {
       controller.dispose();
     }
+    for (final node in _focusNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -402,6 +406,24 @@ class _ListEditorState extends State<_ListEditor> {
     return _controllers.putIfAbsent(
       item['id'] as String,
       () => TextEditingController(text: (item['text'] ?? '').toString()),
+    );
+  }
+
+  FocusNode _focusNodeFor(Map<String, dynamic> item) =>
+      _focusNodes.putIfAbsent(item['id'] as String, () => FocusNode());
+
+  /// Enter splits the current item at the cursor: text before it stays, text
+  /// after it moves into a fresh item that takes focus.
+  void _insertAfter(int index, String text) {
+    final newItem = <String, dynamic>{
+      'id': _uid(),
+      'text': text,
+      if (widget.variant == _ListVariant.checklist) 'checked': false,
+    };
+    _controllers[newItem['id'] as String] = TextEditingController(text: text);
+    setState(() => _items.insert(index + 1, newItem));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _focusNodeFor(newItem).requestFocus(),
     );
   }
 
@@ -442,6 +464,7 @@ class _ListEditorState extends State<_ListEditor> {
     final id = _items[index]['id'] as String;
     setState(() => _items.removeAt(index));
     _controllers.remove(id)?.dispose();
+    _focusNodes.remove(id)?.dispose();
   }
 
   /// `newIndex` arrives already adjusted for the removed item (onReorderItem).
@@ -464,14 +487,35 @@ class _ListEditorState extends State<_ListEditor> {
               final item = _items[index];
               return Padding(
                 key: ValueKey(item['id']),
-                padding: const EdgeInsets.symmetric(vertical: 1),
+                padding: EdgeInsets.zero,
                 child: Row(
                   children: [
                     _leading(index, item),
                     Expanded(
                       child: TextField(
                         controller: _controllerFor(item),
-                        onChanged: (value) => item['text'] = value,
+                        focusNode: _focusNodeFor(item),
+                        onChanged: (value) {
+                          final nl = value.indexOf('\n');
+                          if (nl < 0) {
+                            item['text'] = value;
+                            return;
+                          }
+                          // Enter pressed: keep text before the newline, push
+                          // the rest into a new item instead of a line break.
+                          final before = value.substring(0, nl);
+                          final after = value.substring(nl + 1);
+                          item['text'] = before;
+                          _controllers[item['id']]!.value = TextEditingValue(
+                            text: before,
+                            selection: TextSelection.collapsed(
+                              offset: before.length,
+                            ),
+                          );
+                          _insertAfter(index, after);
+                        },
+                        // Wraps long text onto new lines; Enter is intercepted
+                        // above to create a new item instead of a line break.
                         minLines: 1,
                         maxLines: null,
                         style:
