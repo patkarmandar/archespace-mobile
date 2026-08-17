@@ -4,6 +4,7 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:highlight/highlight.dart' show highlight;
 
+import 'package:archespace_mobile/src/features/items/domain/draw.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_clipboard.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
@@ -299,7 +300,10 @@ class _ItemBody extends StatelessWidget {
       case 'table':
         return _TableView(columns: _columns(c), rows: _rows(c));
       case 'draw':
-        return _Drawing(strokes: (c['strokes'] as List?) ?? const []);
+        return _Drawing(
+          strokes: (c['strokes'] as List?) ?? const [],
+          orientation: c['orientation'],
+        );
       default:
         return Text('Unsupported item type: ${item.type}');
     }
@@ -571,21 +575,23 @@ class _TableView extends StatelessWidget {
 }
 
 class _Drawing extends StatelessWidget {
-  const _Drawing({required this.strokes});
+  const _Drawing({required this.strokes, this.orientation});
 
   final List<dynamic> strokes;
+  final Object? orientation;
 
   @override
   Widget build(BuildContext context) {
     if (strokes.isEmpty) return const _Empty();
+    final logical = drawLogicalSize(orientation);
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: AspectRatio(
-        aspectRatio: 1000 / 600,
+        aspectRatio: logical.width / logical.height,
         child: ColoredBox(
           color: Colors.white,
           child: CustomPaint(
-            painter: _StrokePainter(strokes),
+            painter: _StrokePainter(strokes, logical),
             size: Size.infinite,
           ),
         ),
@@ -595,11 +601,10 @@ class _Drawing extends StatelessWidget {
 }
 
 class _StrokePainter extends CustomPainter {
-  _StrokePainter(this.strokes);
+  _StrokePainter(this.strokes, this.logical);
 
   final List<dynamic> strokes;
-  static const double _vw = 1000;
-  static const double _vh = 600;
+  final Size logical;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -613,14 +618,14 @@ class _StrokePainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..strokeWidth =
-            ((s['size'] as num?)?.toDouble() ?? 8) * size.width / _vw;
+            ((s['size'] as num?)?.toDouble() ?? 8) * size.width / logical.width;
 
       final path = Path();
       var started = false;
       for (final p in pts) {
         if (p is! List || p.length < 2) continue;
-        final x = (p[0] as num).toDouble() / _vw * size.width;
-        final y = (p[1] as num).toDouble() / _vh * size.height;
+        final x = (p[0] as num).toDouble() / logical.width * size.width;
+        final y = (p[1] as num).toDouble() / logical.height * size.height;
         if (!started) {
           path.moveTo(x, y);
           started = true;
@@ -634,7 +639,7 @@ class _StrokePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _StrokePainter oldDelegate) =>
-      oldDelegate.strokes != strokes;
+      oldDelegate.strokes != strokes || oldDelegate.logical != logical;
 }
 
 class _Empty extends StatelessWidget {

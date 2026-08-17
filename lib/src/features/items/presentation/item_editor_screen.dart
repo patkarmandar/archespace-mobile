@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
 import 'package:archespace_mobile/src/features/items/data/item_repository.dart';
+import 'package:archespace_mobile/src/features/items/domain/draw.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
@@ -959,7 +960,18 @@ class _DrawEditorState extends State<_DrawEditor> {
   Map<String, dynamic>? _current;
   String _color = _kInkColors.first;
   double _size = _kInkSizes[1];
+  String _tool = 'pen';
+  List<double>? _startPoint;
   Size _canvas = Size.zero;
+
+  Size get _logical => drawLogicalSize(widget.content['orientation']);
+  String get _orientation =>
+      widget.content['orientation'] == 'portrait' ? 'portrait' : 'landscape';
+
+  void _setOrientation(String value) {
+    if (_orientation == value) return;
+    setState(() => widget.content['orientation'] = value);
+  }
 
   @override
   void initState() {
@@ -973,13 +985,19 @@ class _DrawEditorState extends State<_DrawEditor> {
   List<double> _toLogical(Offset local, double pressure) {
     final w = _canvas.width <= 0 ? 1.0 : _canvas.width;
     final h = _canvas.height <= 0 ? 1.0 : _canvas.height;
-    return [local.dx / w * 1000, local.dy / h * 600, pressure];
+    return [
+      local.dx / w * _logical.width,
+      local.dy / h * _logical.height,
+      pressure,
+    ];
   }
 
   void _start(Offset p, double pressure) {
+    final lp = _toLogical(p, pressure);
+    _startPoint = lp;
     setState(
       () => _current = {
-        'points': [_toLogical(p, pressure)],
+        'points': [lp],
         'color': _color,
         'size': _size,
       },
@@ -988,7 +1006,14 @@ class _DrawEditorState extends State<_DrawEditor> {
 
   void _extend(Offset p, double pressure) {
     if (_current == null) return;
-    setState(() => (_current!['points'] as List).add(_toLogical(p, pressure)));
+    if (_tool == 'pen') {
+      setState(
+        () => (_current!['points'] as List).add(_toLogical(p, pressure)),
+      );
+    } else {
+      final pts = shapePoints(_tool, _startPoint!, _toLogical(p, pressure));
+      setState(() => _current!['points'] = pts);
+    }
   }
 
   void _end() {
@@ -1008,12 +1033,63 @@ class _DrawEditorState extends State<_DrawEditor> {
     setState(_strokes.clear);
   }
 
+  Widget _toolButton(String id, IconData icon, String tip, Color accent) {
+    final sel = _tool == id;
+    return IconButton(
+      onPressed: () => setState(() => _tool = id),
+      icon: Icon(icon),
+      tooltip: tip,
+      visualDensity: VisualDensity.compact,
+      isSelected: sel,
+      color: sel ? accent : null,
+    );
+  }
+
+  Widget _orientationButton(
+    String id,
+    IconData icon,
+    String tip,
+    Color accent,
+  ) {
+    final sel = _orientation == id;
+    return IconButton(
+      onPressed: () => _setOrientation(id),
+      icon: Icon(icon),
+      tooltip: tip,
+      visualDensity: VisualDensity.compact,
+      isSelected: sel,
+      color: sel ? accent : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Row(
+          children: [
+            _toolButton('pen', Icons.edit_outlined, 'Pen', accent),
+            _toolButton('line', Icons.horizontal_rule, 'Line', accent),
+            _toolButton('rect', Icons.crop_square, 'Rectangle', accent),
+            _toolButton('ellipse', Icons.circle_outlined, 'Ellipse', accent),
+            const Spacer(),
+            _orientationButton(
+              'landscape',
+              Icons.crop_landscape,
+              'Landscape',
+              accent,
+            ),
+            _orientationButton(
+              'portrait',
+              Icons.crop_portrait,
+              'Portrait',
+              accent,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -1083,7 +1159,7 @@ class _DrawEditorState extends State<_DrawEditor> {
         Expanded(
           child: Center(
             child: AspectRatio(
-              aspectRatio: 1000 / 600,
+              aspectRatio: _logical.width / _logical.height,
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   _canvas = Size(constraints.maxWidth, constraints.maxHeight);
@@ -1103,7 +1179,7 @@ class _DrawEditorState extends State<_DrawEditor> {
                             _extend(e.localPosition, e.pressure),
                         onPointerUp: (e) => _end(),
                         child: CustomPaint(
-                          painter: _DrawPainter(_strokes, _current),
+                          painter: _DrawPainter(_strokes, _current, _logical),
                           // A concrete expanding child guarantees the canvas fills
                           // the box and stays hit-testable; `size: Size.infinite`
                           // with no child can collapse to zero under loose
@@ -1124,10 +1200,11 @@ class _DrawEditorState extends State<_DrawEditor> {
 }
 
 class _DrawPainter extends CustomPainter {
-  _DrawPainter(this.strokes, this.current);
+  _DrawPainter(this.strokes, this.current, this.logical);
 
   final List<dynamic> strokes;
   final Map<String, dynamic>? current;
+  final Size logical;
 
   void _paintStroke(Canvas canvas, Size size, Map<dynamic, dynamic> stroke) {
     final points = (stroke['points'] as List?) ?? const [];
@@ -1138,13 +1215,15 @@ class _DrawPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..strokeWidth =
-          ((stroke['size'] as num?)?.toDouble() ?? 8) * size.width / 1000;
+          ((stroke['size'] as num?)?.toDouble() ?? 8) *
+          size.width /
+          logical.width;
 
     final offsets = <Offset>[];
     for (final p in points) {
       if (p is! List || p.length < 2) continue;
-      final x = (p[0] as num).toDouble() / 1000 * size.width;
-      final y = (p[1] as num).toDouble() / 600 * size.height;
+      final x = (p[0] as num).toDouble() / logical.width * size.width;
+      final y = (p[1] as num).toDouble() / logical.height * size.height;
       offsets.add(Offset(x, y));
     }
     if (offsets.isEmpty) return;

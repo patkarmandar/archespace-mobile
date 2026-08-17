@@ -1,8 +1,11 @@
+import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import 'package:archespace_mobile/src/features/items/domain/draw.dart';
 import 'package:archespace_mobile/src/features/items/domain/space_item.dart';
 
 /// Builds a PDF for a whole space or a single item, per item type. Mirrors the
@@ -178,17 +181,21 @@ class PdfExporter {
   static pw.Widget _drawing(Map<String, dynamic> c) {
     final strokes = c['strokes'] as List? ?? const [];
     if (strokes.isEmpty) return pw.Text('(empty drawing)');
+    final logical = drawLogicalSize(c['orientation']);
+    final scale = 360 / max(logical.width, logical.height);
     return pw.SizedBox(
-      width: 360,
-      height: 216,
-      child: pw.SvgImage(svg: _drawSvg(strokes)),
+      width: logical.width * scale,
+      height: logical.height * scale,
+      child: pw.SvgImage(svg: _drawSvg(strokes, logical)),
     );
   }
 
-  static String _drawSvg(List<dynamic> strokes) {
+  static String _drawSvg(List<dynamic> strokes, Size logical) {
+    final w = logical.width.toInt();
+    final h = logical.height.toInt();
     final buffer = StringBuffer(
-      '<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">'
-      '<rect width="1000" height="600" fill="white"/>',
+      '<svg viewBox="0 0 $w $h" xmlns="http://www.w3.org/2000/svg">'
+      '<rect width="$w" height="$h" fill="white"/>',
     );
     for (final s in strokes) {
       if (s is! Map) continue;
