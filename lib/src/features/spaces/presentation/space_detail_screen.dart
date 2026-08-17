@@ -572,7 +572,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
     if (_view == 'grid') return _grid(items);
     return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(top: 8, bottom: 88),
+      padding: const EdgeInsets.only(top: 4, bottom: 88),
       buildDefaultDragHandles:
           !_selectMode && !_offline && _sort == kSortDefault,
       onReorderItem: _onReorder,
@@ -583,7 +583,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
         return AnimatedContainer(
           key: ValueKey(item.id),
           duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.symmetric(horizontal: 6),
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: _flashId == item.id
@@ -592,7 +592,7 @@ class _SpaceDetailScreenState extends State<SpaceDetailScreen> {
           ),
           child: KeyedSubtree(
             key: isFocus ? _focusKey : null,
-            child: _itemCard(item),
+            child: _itemCard(item, margin: EdgeInsets.zero),
           ),
         );
       },
