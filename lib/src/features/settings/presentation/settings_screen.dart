@@ -230,6 +230,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () => _push(const ChangePasswordScreen()),
             ),
             ListTile(
+              leading: const Icon(Icons.verified_user_outlined),
+              title: const Text('Two-factor authentication'),
+              subtitle: const Text('Add an authenticator code at sign-in'),
+              onTap: () => _push(const TwoFactorScreen()),
+            ),
+            ListTile(
               leading: Icon(
                 Icons.person_remove_outlined,
                 color: Theme.of(context).colorScheme.error,

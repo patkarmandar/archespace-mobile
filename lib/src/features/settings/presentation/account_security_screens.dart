@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/auth/data/mfa_service.dart';
 import 'package:archespace_mobile/src/features/auth/domain/email.dart';
 import 'package:archespace_mobile/src/features/auth/domain/password_policy.dart';
 import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
@@ -1084,6 +1086,447 @@ class _SubmitButton extends StatelessWidget {
               )
             : Text(label),
       ),
+    );
+  }
+}
+
+// Two-factor authentication (TOTP): enable with a QR + one-time backup codes,
+// disable (login password required), or regenerate backup codes.
+class TwoFactorScreen extends StatefulWidget {
+  const TwoFactorScreen({super.key});
+
+  @override
+  State<TwoFactorScreen> createState() => _TwoFactorScreenState();
+}
+
+class _TwoFactorScreenState extends State<TwoFactorScreen> {
+  final AuthService _auth = AuthService();
+  final MfaService _mfa = MfaService();
+  final TextEditingController _code = TextEditingController();
+
+  bool _loading = true;
+  bool _busy = false;
+  bool _enabled = false;
+  int _remaining = 0;
+  String? _error;
+  MfaEnrollment? _enroll;
+  List<String>? _backupCodes;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    _code.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final factorId = await _mfa.verifiedFactorId();
+      final count = factorId != null ? await _mfa.countUnusedBackupCodes() : 0;
+      if (!mounted) return;
+      setState(() {
+        _enabled = factorId != null;
+        _remaining = count;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _snack(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<void> _startEnroll() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final data = await _mfa.enroll();
+      setState(() {
+        _enroll = data;
+        _code.clear();
+        _busy = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = _authMessage(e);
+        _busy = false;
+      });
+    }
+  }
+
+  Future<void> _cancelEnroll() async {
+    final factorId = _enroll?.factorId;
+    setState(() {
+      _enroll = null;
+      _code.clear();
+      _error = null;
+    });
+    if (factorId != null) {
+      try {
+        await _mfa.unenroll(factorId);
+      } catch (_) {
+        // Ignore: an orphan unverified factor is cleared on the next enrol.
+      }
+    }
+  }
+
+  Future<void> _confirmEnroll() async {
+    if (_code.text.trim().isEmpty) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await _mfa.verify(_enroll!.factorId, _code.text);
+      final codes = await _mfa.regenerateBackupCodes(_requireUserId(_auth));
+      setState(() {
+        _enroll = null;
+        _backupCodes = codes;
+        _busy = false;
+      });
+      await _refresh();
+    } catch (_) {
+      setState(() {
+        _error = 'That code was not accepted. Try again.';
+        _busy = false;
+      });
+    }
+  }
+
+  Future<void> _regenerate() async {
+    setState(() => _busy = true);
+    try {
+      final codes = await _mfa.regenerateBackupCodes(_requireUserId(_auth));
+      setState(() {
+        _backupCodes = codes;
+        _busy = false;
+      });
+      await _refresh();
+    } catch (e) {
+      setState(() => _busy = false);
+      _snack(_authMessage(e));
+    }
+  }
+
+  Future<void> _disable() async {
+    final password = await _promptPassword();
+    if (password == null) return;
+    setState(() => _busy = true);
+    try {
+      final ok = await _mfa.verifyAccountPassword(
+        _auth.currentUser?.email ?? '',
+        password,
+      );
+      if (!ok) {
+        setState(() => _busy = false);
+        _snack('Login password is incorrect.');
+        return;
+      }
+      final factorId = await _mfa.verifiedFactorId();
+      if (factorId != null) await _mfa.unenroll(factorId);
+      await Supabase.instance.client
+          .from('mfa_backup_codes')
+          .delete()
+          .eq('user_id', _requireUserId(_auth));
+      await _refresh();
+      setState(() => _busy = false);
+      _snack('Two-factor authentication disabled.');
+    } catch (e) {
+      setState(() => _busy = false);
+      _snack(_authMessage(e));
+    }
+  }
+
+  Future<String?> _promptPassword() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Disable two-factor authentication?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter your login password to confirm. Your account will then be '
+              'protected by your password alone.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Login password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return (result == null || result.isEmpty) ? null : result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Two-factor authentication')),
+      body: SafeArea(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: _backupCodes != null
+                    ? _backupCodesView()
+                    : _enroll != null
+                    ? _enrollView()
+                    : _statusView(),
+              ),
+      ),
+    );
+  }
+
+  Widget _statusView() {
+    if (_enabled) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Icon(Icons.verified_user, size: 48, color: Colors.green),
+          const SizedBox(height: 16),
+          Text(
+            'Two-factor authentication is on',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "You'll enter a code from your authenticator app when you sign in. "
+            '$_remaining backup code${_remaining == 1 ? '' : 's'} remaining.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _regenerate,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Regenerate backup codes'),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.tonalIcon(
+            onPressed: _busy ? null : _disable,
+            icon: const Icon(Icons.gpp_bad_outlined),
+            label: const Text('Disable'),
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Icon(Icons.gpp_maybe_outlined, size: 48),
+        const SizedBox(height: 16),
+        Text(
+          'Add two-factor authentication',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Require a one-time code from an authenticator app (Google '
+          'Authenticator, Authy, 1Password) each time you sign in, on top of '
+          'your password.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: _busy ? null : _startEnroll,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: _busy
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Enable'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _enrollView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Scan this with your authenticator app, then enter the 6-digit code '
+          'it shows.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: QrImageView(
+              data: _enroll!.uri,
+              size: 200,
+              backgroundColor: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Or enter this key manually:',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 4),
+        SelectableText(
+          _enroll!.secret,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontFamily: 'monospace', letterSpacing: 1.5),
+        ),
+        const SizedBox(height: 20),
+        TextField(
+          controller: _code,
+          enabled: !_busy,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          onSubmitted: (_) => _confirmEnroll(),
+          decoration: const InputDecoration(
+            labelText: '6-digit code',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _busy ? null : _cancelEnroll,
+                child: const Text('Cancel'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: _busy ? null : _confirmEnroll,
+                child: Text(_busy ? 'Verifying…' : 'Verify & enable'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _backupCodesView() {
+    final scheme = Theme.of(context).colorScheme;
+    final codes = _backupCodes!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Icon(Icons.vpn_key_outlined, size: 48),
+        const SizedBox(height: 16),
+        Text(
+          'Save your backup codes',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Keep these somewhere safe. Each code can be used once to sign in if '
+          'you lose your authenticator. Using one turns off two-factor '
+          'authentication so you can set it up again.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              for (final code in codes)
+                SelectableText(
+                  code,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 16,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: codes.join('\n')));
+                  _snack('Backup codes copied.');
+                },
+                icon: const Icon(Icons.copy),
+                label: const Text('Copy'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: () => setState(() => _backupCodes = null),
+                child: const Text('Done'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

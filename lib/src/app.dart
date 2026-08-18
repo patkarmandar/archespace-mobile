@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:archespace_mobile/src/features/auth/data/auth_service.dart';
+import 'package:archespace_mobile/src/features/auth/data/mfa_service.dart';
+import 'package:archespace_mobile/src/features/auth/presentation/mfa_challenge_screen.dart';
 import 'package:archespace_mobile/src/features/vault/data/secure_key_store.dart';
 import 'package:archespace_mobile/src/features/vault/data/vault_service.dart';
 import 'package:archespace_mobile/src/features/vault/application/vault_session.dart';
@@ -80,12 +82,37 @@ class _RootGateState extends State<_RootGate> {
     if (_auth.currentSession == null) {
       return const LoginScreen();
     }
-    return ValueListenableBuilder<bool>(
-      valueListenable: VaultSession.instance.unlocked,
-      builder: (context, unlocked, _) => unlocked
-          ? const InactivityLocker(child: SpacesScreen())
-          : const _VaultGate(),
+    // 2FA (if enabled) must pass before the vault: password -> 2FA -> vault PIN.
+    return _MfaGate(
+      child: ValueListenableBuilder<bool>(
+        valueListenable: VaultSession.instance.unlocked,
+        builder: (context, unlocked, _) => unlocked
+            ? const InactivityLocker(child: SpacesScreen())
+            : const _VaultGate(),
+      ),
     );
+  }
+}
+
+/// Requires the session to reach AAL2 before showing [child], when the account
+/// has 2FA enabled. Accounts without 2FA fall straight through.
+class _MfaGate extends StatefulWidget {
+  const _MfaGate({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_MfaGate> createState() => _MfaGateState();
+}
+
+class _MfaGateState extends State<_MfaGate> {
+  final MfaService _mfa = MfaService();
+  bool _passed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_passed || !_mfa.needsChallenge()) return widget.child;
+    return MfaChallengeScreen(onVerified: () => setState(() => _passed = true));
   }
 }
 
