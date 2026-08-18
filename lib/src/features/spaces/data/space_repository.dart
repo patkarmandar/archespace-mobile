@@ -70,25 +70,31 @@ class SpaceRepository {
     final spaces = <Space>[];
     for (final row in rows) {
       final m = row as Map;
-      spaces.add(
-        Space(
-          id: m['id'] as String,
-          name: await ArcheCrypto.decryptArc1(
-            (m['name'] ?? '') as String,
-            _masterKey,
+      try {
+        spaces.add(
+          Space(
+            id: m['id'] as String,
+            name: await ArcheCrypto.decryptArc1(
+              (m['name'] ?? '') as String,
+              _masterKey,
+            ),
+            description: await ArcheCrypto.decryptArc1(
+              (m['description'] ?? '') as String,
+              _masterKey,
+            ),
+            pinned: (m['pinned'] ?? false) as bool,
+            tags: await _decodeTags(m['tags']),
+            color: m['color'] as String?,
+            itemCount: (m['_item_count'] ?? 0) as int,
+            pinnedCount: (m['_pinned_count'] ?? 0) as int,
+            createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
           ),
-          description: await ArcheCrypto.decryptArc1(
-            (m['description'] ?? '') as String,
-            _masterKey,
-          ),
-          pinned: (m['pinned'] ?? false) as bool,
-          tags: await _decodeTags(m['tags']),
-          color: m['color'] as String?,
-          itemCount: (m['_item_count'] ?? 0) as int,
-          pinnedCount: (m['_pinned_count'] ?? 0) as int,
-          createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
-        ),
-      );
+        );
+      } catch (_) {
+        // Skip a row we can't decrypt (e.g. left from a previous vault key)
+        // rather than failing the whole list.
+        continue;
+      }
     }
     return spaces;
   }

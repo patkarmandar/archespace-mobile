@@ -169,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final date = DateTime.now().toIso8601String().substring(0, 10);
       final path = await FilePicker.platform.saveFile(
         dialogTitle: 'Save backup',
-        fileName: 'arche-backup-$date.json',
+        fileName: 'archespace-backup-$date.json',
         type: FileType.custom,
         allowedExtensions: const ['json'],
         bytes: bytes,
@@ -189,10 +189,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final path = result?.files.single.path;
       if (path == null) return;
       final text = await File(path).readAsString();
-      final count = await BackupRepository(
+      final summary = await BackupRepository(
         VaultSession.instance.masterKey,
       ).importJson(text);
-      _snack('Imported $count ${count == 1 ? 'item' : 'items'}.');
+      final spacesLabel =
+          '${summary.spaces} ${summary.spaces == 1 ? 'space' : 'spaces'}';
+      final itemsLabel =
+          '${summary.items} ${summary.items == 1 ? 'item' : 'items'}';
+      final skippedLabel = summary.skipped > 0
+          ? ' (${summary.skipped} skipped)'
+          : '';
+      _snack('Imported $spacesLabel and $itemsLabel$skippedLabel.');
     } on FormatException {
       _snack("That backup file isn't valid.");
     } catch (_) {

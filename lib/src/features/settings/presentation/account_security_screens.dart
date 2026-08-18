@@ -1318,14 +1318,14 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
           const Icon(Icons.verified_user, size: 48, color: Colors.green),
           const SizedBox(height: 16),
           Text(
-            'Two-factor authentication is on',
+            'Two-factor authentication is enabled',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            "You'll enter a code from your authenticator app when you sign in. "
-            '$_remaining backup code${_remaining == 1 ? '' : 's'} remaining.',
+            "You'll enter a code from your authenticator app when you sign in."
+            "${_remaining == 0 ? ' No backup code left - regenerate one so you can get back in if you lose your authenticator.' : ''}",
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),
@@ -1333,7 +1333,7 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
           OutlinedButton.icon(
             onPressed: _busy ? null : _regenerate,
             icon: const Icon(Icons.refresh),
-            label: const Text('Regenerate backup codes'),
+            label: const Text('Regenerate backup code'),
           ),
           const SizedBox(height: 12),
           FilledButton.tonalIcon(
@@ -1467,41 +1467,34 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
         const Icon(Icons.vpn_key_outlined, size: 48),
         const SizedBox(height: 16),
         Text(
-          'Save your backup codes',
+          'Save your backup code',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         Text(
-          'Keep these somewhere safe. Each code can be used once to sign in if '
-          'you lose your authenticator. Using one turns off two-factor '
-          'authentication so you can set it up again.',
+          'Keep this somewhere safe. It works once to sign in if you lose your '
+          'authenticator, which turns off two-factor authentication so you can '
+          'set it up again.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: scheme.outlineVariant),
           ),
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              for (final code in codes)
-                SelectableText(
-                  code,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 16,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-            ],
+          child: SelectableText(
+            codes.first,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 20,
+              letterSpacing: 3,
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -1510,8 +1503,8 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: codes.join('\n')));
-                  _snack('Backup codes copied.');
+                  Clipboard.setData(ClipboardData(text: codes.first));
+                  _snack('Backup code copied.');
                 },
                 icon: const Icon(Icons.copy),
                 label: const Text('Copy'),

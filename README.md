@@ -44,6 +44,7 @@ It talks to the **same Supabase backend** as the web app and shares the same cli
 - Private, encrypted vault to keep your content secure (see [Security model](#security-model)).
 - Biometric unlock (fingerprint or face) with the wrapped key kept in the platform keystore.
 - Account management: create account, change email, change login password, forgot password, and permanent account deletion.
+- Optional two-factor authentication (TOTP) for sign-in, with a one-time backup code, enabled per account from Settings (see [Security model](#security-model)).
 - Vault management: change PIN with the current PIN, reset PIN with a recovery code, and generate a new recovery code.
 - Realtime sync and pull-to-refresh across spaces and items.
 - Works offline: an encrypted read cache plus a durable write queue that replays edits when you reconnect.
@@ -82,6 +83,16 @@ ArcheSpace uses a device-side vault model. You sign in with Supabase Auth using 
 - The vault can be locked manually from Settings, and is cleared on sign out.
 - Signing out ends only this device's session by default; Settings also offers "Sign out of all devices" to revoke every session at once.
 - Supabase Row Level Security restricts each user to their own rows.
+
+**Two-factor authentication (2FA)**
+
+- Optional TOTP two-factor authentication can be enabled per account from Settings, under Account. It is off by default for every existing and new account; each user opts in manually.
+- Enrolment uses Supabase's native MFA: scan the QR code (or enter the key) into an authenticator app such as Google Authenticator, Authy, or 1Password. The TOTP secret is held only by Supabase Auth and is never stored in a client-readable table, so 2FA still protects the account if the login password is compromised.
+- When 2FA is on, sign-in asks for the authenticator code after the password and before the vault unlock, so the order is login password, then 2FA, then vault PIN.
+- Row Level Security enforces this at the database as well: once a verified factor exists, the account's data - including the wrapped vault key - is only readable after the second factor is verified (AAL2), so 2FA cannot be bypassed by calling the API directly. Accounts without 2FA are unaffected.
+- A one-time backup code is shown once when 2FA is enabled, and can be regenerated from Settings. Only its SHA-256 hash is stored. The backup code can be used at sign-in if the authenticator is lost; using it removes the factor so you can sign in and set 2FA up again. (One code is enough because redeeming it disables 2FA.)
+- Disabling 2FA requires re-entering the login password.
+- This shares the same Supabase project and `mfa_backup_codes` schema as the web app, so 2FA enabled on one client applies to sign-in on both.
 
 **Recovery**
 
@@ -217,9 +228,9 @@ archespace-mobile/
   lib/
     main.dart             # bootstrap: Supabase init, appearance, write-queue replay
     src/
-      app.dart            # root gate: login -> vault setup/unlock -> spaces
+      app.dart            # root gate: login -> 2FA -> vault setup/unlock -> spaces
       features/
-        auth/             # sign in, sign up, password policy
+        auth/             # sign in, sign up, password policy, two-factor auth (TOTP)
         vault/            # crypto vault, PIN/recovery, biometric unlock, setup/unlock
         spaces/           # spaces list, editor, cards
         items/            # item types, editors, cards, clipboard
@@ -249,7 +260,6 @@ Each feature follows a `data` / `domain` / `application` / `presentation` layeri
 ## Roadmap
 
 - **Push notifications**: "something changed" signals only (never content), sent server-side.
-- **Forgot PIN on the lock screen**: today the recovery-code reset lives in Settings, which requires an unlocked vault; a locked-out user should be able to reset from the unlock screen.
 - **Release signing**: ship a real Android keystore (and iOS signing) so releases are store-ready.
 - **First-party backend**: mirrors the web roadmap - a self-contained backend the project owns, landing incrementally behind configuration. The zero-knowledge design does not change.
 

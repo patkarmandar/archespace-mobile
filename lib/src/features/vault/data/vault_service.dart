@@ -97,6 +97,30 @@ class VaultService {
     final pinErr = validateVaultPin(pin);
     if (pinErr != null) throw VaultException(pinErr);
 
+    // Safety net: never overwrite an existing vault. If a row already exists this
+    // is an unlock situation misread as first-run setup - replacing the master
+    // key would lock the user out of all their data. Fail closed (a check error
+    // also aborts, rather than risk an overwrite).
+    Map<String, dynamic>? existing;
+    try {
+      existing = await _client
+          .from('user_encryption')
+          .select('wrapped_key, key_check')
+          .eq('user_id', userId)
+          .maybeSingle();
+    } catch (_) {
+      throw VaultException(
+        'Could not verify your vault. Check your connection and try again.',
+      );
+    }
+    if (existing != null &&
+        (existing['wrapped_key'] != null || existing['key_check'] != null)) {
+      throw VaultException(
+        'A vault already exists for this account. Reopen the app and unlock '
+        'with your PIN.',
+      );
+    }
+
     final masterKey = ArcheCrypto.randomAesKey();
     final recoveryCode = generateRecoveryCode();
     await _persistPinWrapped(

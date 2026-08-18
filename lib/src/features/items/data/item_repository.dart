@@ -51,19 +51,25 @@ class ItemRepository {
     final items = <SpaceItem>[];
     for (final row in rows) {
       final m = row as Map;
-      items.add(
-        SpaceItem(
-          id: m['id'] as String,
-          type: (m['type'] ?? '') as String,
-          title: await ArcheCrypto.decryptArc1(
-            (m['title'] ?? '') as String,
-            _masterKey,
+      try {
+        items.add(
+          SpaceItem(
+            id: m['id'] as String,
+            type: (m['type'] ?? '') as String,
+            title: await ArcheCrypto.decryptArc1(
+              (m['title'] ?? '') as String,
+              _masterKey,
+            ),
+            content: await _decryptContent(m['content']),
+            pinned: (m['pinned'] ?? false) as bool,
+            createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
           ),
-          content: await _decryptContent(m['content']),
-          pinned: (m['pinned'] ?? false) as bool,
-          createdAt: DateTime.tryParse((m['created_at'] ?? '').toString()),
-        ),
-      );
+        );
+      } catch (_) {
+        // Skip a row we can't decrypt (e.g. left from a previous vault key)
+        // rather than failing the whole list.
+        continue;
+      }
     }
     return items;
   }

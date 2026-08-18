@@ -27,7 +27,9 @@ class MfaEnrollment {
 /// recovery-code format; only their SHA-256 hash is stored, matching the
 /// `redeem_mfa_backup_code` function in schema.sql section 4b.
 class MfaService {
-  static const int backupCodeCount = 8;
+  // One code is enough: redeeming it disables 2FA, so extra codes would be dead
+  // the moment the first is used.
+  static const int backupCodeCount = 1;
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -113,7 +115,18 @@ class MfaService {
       'redeem_mfa_backup_code',
       params: {'code': code},
     );
-    return result == true;
+    final ok = result == true;
+    if (ok) {
+      // The factor is gone server-side, but the current session still expects
+      // AAL2. Refresh so needsChallenge() stops requiring 2FA (otherwise the
+      // challenge would keep reappearing).
+      try {
+        await _client.auth.refreshSession();
+      } catch (_) {
+        // Ignore: a failed refresh just means the next check re-evaluates.
+      }
+    }
+    return ok;
   }
 
   /// Check the account password without disturbing the active session. Signing

@@ -5,9 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:archespace_mobile/src/features/items/domain/item_types.dart';
 import 'package:archespace_mobile/src/shared/crypto/arche_crypto.dart';
 
-/// JSON backup export/import, compatible with the web backup format:
-/// a top-level array of decrypted spaces, each with an `items` array of
-/// decrypted items ({ type, title, content, position, pinned }).
+/// JSON backup export/import, matching the web format: a versioned envelope
+/// `{ app, version, exportedAt, spaces: [...] }` where each space carries its
+/// decrypted fields and an `items` array of decrypted items ({ type, title,
+/// content, position, pinned }). Import also accepts the older bare-array format.
 class BackupRepository {
   BackupRepository(this._masterKey);
 
@@ -84,18 +85,32 @@ class BackupRepository {
         'items': items,
       });
     }
-    return const JsonEncoder.withIndent('  ').convert(out);
+    final payload = {
+      'app': 'ArcheSpace',
+      'version': 2,
+      'exportedAt': DateTime.now().toUtc().toIso8601String(),
+      'spaces': out,
+    };
+    return const JsonEncoder.withIndent('  ').convert(payload);
   }
 
-  /// Import a backup: encrypt and insert new spaces + items. Returns the number
-  /// of items imported. Unknown item types / malformed content are skipped.
-  Future<int> importJson(String text) async {
+  /// Import a backup: encrypt and insert new spaces + items. Accepts the current
+  /// `{ version, spaces: [...] }` format and the older bare-array format.
+  /// Returns how many spaces and items were imported, and how many items were
+  /// skipped (unknown type / malformed content).
+  Future<({int spaces, int items, int skipped})> importJson(String text) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw StateError('Not authenticated');
 
     final parsed = jsonDecode(text);
-    if (parsed is! List) {
-      throw const FormatException('Expected a JSON array of spaces.');
+    // Current format is { version, spaces: [...] }; older backups are a bare list.
+    final List<dynamic> parsedSpaces;
+    if (parsed is List) {
+      parsedSpaces = parsed;
+    } else if (parsed is Map && parsed['spaces'] is List) {
+      parsedSpaces = parsed['spaces'] as List;
+    } else {
+      throw const FormatException('Expected a list of spaces.');
     }
 
     final existing = await _client
@@ -107,8 +122,10 @@ class BackupRepository {
 
     final knownTypes = kItemTypes.map((d) => d.type).toSet();
     var itemsImported = 0;
+    var itemsSkipped = 0;
+    var spacesImported = 0;
 
-    for (final raw in parsed) {
+    for (final raw in parsedSpaces) {
       if (raw is! Map) continue;
 
       final rawName = raw['name'];
@@ -131,22 +148,33 @@ class BackupRepository {
             'description': await _enc(description),
             'color': color,
             'tags': tags.isEmpty ? null : await _encJson(tags),
+            'pinned': raw['pinned'] == true,
             'position': spacePos++,
           })
           .select('id')
           .single();
       final spaceId = created['id'] as String;
+      spacesImported++;
 
       final items = raw['items'];
       if (items is! List) continue;
 
       final rows = <Map<String, dynamic>>[];
       for (final it in items) {
-        if (it is! Map) continue;
+        if (it is! Map) {
+          itemsSkipped++;
+          continue;
+        }
         final type = it['type'];
-        if (type is! String || !knownTypes.contains(type)) continue;
+        if (type is! String || !knownTypes.contains(type)) {
+          itemsSkipped++;
+          continue;
+        }
         final content = it['content'];
-        if (content is! Map) continue;
+        if (content is! Map) {
+          itemsSkipped++;
+          continue;
+        }
         final title = it['title'] is String
             ? (it['title'] as String).trim()
             : '';
@@ -164,6 +192,10 @@ class BackupRepository {
         itemsImported += rows.length;
       }
     }
-    return itemsImported;
+    return (
+      spaces: spacesImported,
+      items: itemsImported,
+      skipped: itemsSkipped,
+    );
   }
 }
