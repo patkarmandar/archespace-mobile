@@ -1,4 +1,4 @@
-package cc.archespace.archespace_mobile
+package cc.archespace.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
